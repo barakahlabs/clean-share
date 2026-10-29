@@ -58,8 +58,15 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
+        # Lets the Share Extension open the app (cleanshare://share)
+        CFBundleURLTypes:
+          - CFBundleURLName: com.cleanshare.app
+            CFBundleURLSchemes: [cleanshare]
     entitlements:
       path: clean-share_iOS/clean-share_iOS.entitlements
+      properties:
+        # Shared storage with the Share Extension
+        com.apple.security.application-groups: [group.com.cleanshare.app]
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full
@@ -75,6 +82,7 @@ targets:
         EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
       groups: [app]
     dependencies:
+      - target: ShareExtension
       - framework: libapp.a
         embed: false
       - sdk: CoreGraphics.framework
@@ -92,3 +100,32 @@ targets:
         outputFiles:
           - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
+  # Shows the app in the iOS share sheet. Hands shared text to the app via the App Group;
+  # see ShareExtension/ShareViewController.swift and plugins/share-target.
+  ShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ShareExtension
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Clean Share
+        CFBundleShortVersionString: 0.1.0
+        CFBundleVersion: "0.1.0"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+    entitlements:
+      path: ShareExtension/ShareExtension.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.cleanshare.app]
+    settings:
+      base:
+        PRODUCT_NAME: ShareExtension
+        PRODUCT_BUNDLE_IDENTIFIER: com.cleanshare.app.ShareExtension
+        SWIFT_VERSION: "5.0"

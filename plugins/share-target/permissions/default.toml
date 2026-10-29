@@ -1,0 +1,3 @@
+[default]
+description = "Read shared content and listen for new shares"
+permissions = ["allow-get-shared", "allow-register-listener", "allow-remove-listener"]

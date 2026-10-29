@@ -12,6 +12,8 @@
 		13C9033AD61729C25B1F9DCD /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9BE4823B60D2B4525EB31606 /* main.mm */; };
 		3A2CEECCA69905E1EEE93746 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E6D835EE80EEC7AAB19D2B /* MetalKit.framework */; };
 		42921E71103A4703D91B2501 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9AA8145730AA3D8A7A4CEBF5 /* QuartzCore.framework */; };
+		45355B86E592B14768E5A3CD /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1486329B50FF2C46BDB00502 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		636870A1AACEE10E1BDB802F /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A4CF8F4A10CA425441C2E /* ShareViewController.swift */; };
 		6512E83F0726447B1012F2E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3082DE3AA5BBF0CF8EB84AB2 /* Assets.xcassets */; };
 		7449EDB5B788FF42CDE133D4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0B9A0627931C76F056952E83 /* LaunchScreen.storyboard */; };
 		962A8AC4ADC5AC8A5B8D2971 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EEB29D2824CA0AB0507FBE2B /* Security.framework */; };
@@ -21,10 +23,37 @@
 		F0E8CA7963964E1AD5A7D9DA /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3044D8924837582446358613 /* libapp.a */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		3024E8A8F859887353765A04 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 089B8B8236BE12CA25CB02EA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1527AE8A89BFD63DE18D6507;
+			remoteInfo = ShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CE9A382CAB6CA8F474D83C78 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				45355B86E592B14768E5A3CD /* ShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0B9A0627931C76F056952E83 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		1486329B50FF2C46BDB00502 /* ShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		186EAE92E3E2299E68E61AB5 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
 		26E6D835EE80EEC7AAB19D2B /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		285A4CF8F4A10CA425441C2E /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		2CE2E4DBFE44A4AF99A34215 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3044D8924837582446358613 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		3082DE3AA5BBF0CF8EB84AB2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4DE10597EC6E34611E66A114 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -38,6 +67,7 @@
 		A5EDAC6E04C080172BCA550A /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		C117ED8FD9032CBD7AA2BEA3 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
 		C9C54AF9E975DAE7C3529A67 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
+		D7AA1E7356111CE423717043 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		EE9A357C51AB73EF91762914 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
 		EEB29D2824CA0AB0507FBE2B /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -65,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				6A9E24EA1707C4D577598133 /* clean-share_iOS.app */,
+				1486329B50FF2C46BDB00502 /* ShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,6 +174,7 @@
 				0B9A0627931C76F056952E83 /* LaunchScreen.storyboard */,
 				8AE949E362BA4580B6F02B34 /* clean-share_iOS */,
 				06D60BF164F7EC5B102845FA /* Externals */,
+				FB289D17448472AED241D88A /* ShareExtension */,
 				32E1E986115E5F95A60B94ED /* Sources */,
 				8AE946927EAA1833FFA93058 /* src */,
 				64A88B7911F79CC7FF4E47BF /* Frameworks */,
@@ -150,9 +182,36 @@
 			);
 			sourceTree = "<group>";
 		};
+		FB289D17448472AED241D88A /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				2CE2E4DBFE44A4AF99A34215 /* Info.plist */,
+				D7AA1E7356111CE423717043 /* ShareExtension.entitlements */,
+				285A4CF8F4A10CA425441C2E /* ShareViewController.swift */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		1527AE8A89BFD63DE18D6507 /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CCBC41DCF264884CA9F0FEDC /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				60AD709968D76690F720E77B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtension;
+			packageProductDependencies = (
+			);
+			productName = ShareExtension;
+			productReference = 1486329B50FF2C46BDB00502 /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		D4D30ADED98D960CD916538F /* clean-share_iOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 33D702F393F136B0B7C0DC04 /* Build configuration list for PBXNativeTarget "clean-share_iOS" */;
@@ -161,10 +220,12 @@
 				CCF583EF4BE2ACDF552DCEA4 /* Sources */,
 				5191C93196F5CCDA0E387235 /* Resources */,
 				6085DD95D625046545D11413 /* Frameworks */,
+				CE9A382CAB6CA8F474D83C78 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A36A2B5CA4EAD54CBE2E6B8B /* PBXTargetDependency */,
 			);
 			name = "clean-share_iOS";
 			packageProductDependencies = (
@@ -199,6 +260,7 @@
 			projectRoot = "";
 			targets = (
 				D4D30ADED98D960CD916538F /* clean-share_iOS */,
+				1527AE8A89BFD63DE18D6507 /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -241,6 +303,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		60AD709968D76690F720E77B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				636870A1AACEE10E1BDB802F /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CCF583EF4BE2ACDF552DCEA4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -251,7 +321,33 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		A36A2B5CA4EAD54CBE2E6B8B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1527AE8A89BFD63DE18D6507 /* ShareExtension */;
+			targetProxy = 3024E8A8F859887353765A04 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		2B192837789AEA171D85BE92 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cleanshare.app.ShareExtension;
+				PRODUCT_NAME = ShareExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = debug;
+		};
 		4FC00EC6F9AD544AFCC35B76 /* debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -433,6 +529,24 @@
 			};
 			name = release;
 		};
+		F306DE6BF1C1EE1C807EBBFE /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cleanshare.app.ShareExtension;
+				PRODUCT_NAME = ShareExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -450,6 +564,15 @@
 			buildConfigurations = (
 				5860463D9A0665AA8161ABEF /* debug */,
 				9C4BFF134E87BBF6C64A732B /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		CCBC41DCF264884CA9F0FEDC /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2B192837789AEA171D85BE92 /* debug */,
+				F306DE6BF1C1EE1C807EBBFE /* release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = debug;
