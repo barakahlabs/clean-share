@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { onSharedText } from "../shareTarget";
+import { onSharedText, shareText } from "../shareTarget";
 import "./SharedTextScreen.css";
 
 export function SharedTextScreen() {
@@ -20,6 +20,17 @@ export function SharedTextScreen() {
           Share a link or some text from another app and pick Clean Share. It will show up here.
         </p>
       )}
+
+      <footer className="share-footer">
+        <button
+          type="button"
+          className="share-button"
+          disabled={!text}
+          onClick={() => text && shareText(text).catch(console.error)}
+        >
+          Share
+        </button>
+      </footer>
     </main>
   );
 }

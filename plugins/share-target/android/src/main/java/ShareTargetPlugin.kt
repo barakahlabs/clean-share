@@ -1,13 +1,21 @@
 package com.cleanshare.sharetarget
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
+import android.os.Build
 import android.webkit.WebView
 import app.tauri.annotation.Command
+import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
+
+@InvokeArg
+class ShareTextArgs {
+    lateinit var text: String
+}
 
 /**
  * Receives text shared via the Android share sheet (ACTION_SEND, text/plain).
@@ -28,6 +36,29 @@ class ShareTargetPlugin(private val activity: Activity) : Plugin(activity) {
     override fun onNewIntent(intent: Intent) {
         if (takeSharedText(intent)) {
             trigger("shared", JSObject())
+        }
+    }
+
+    // Opens the system share sheet so the user can send text to another app.
+    @Command
+    fun shareText(invoke: Invoke) {
+        val args = invoke.parseArgs(ShareTextArgs::class.java)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, args.text)
+        }
+        val chooser = Intent.createChooser(send, null).apply {
+            // Don't offer sharing back into this app.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                putExtra(
+                    Intent.EXTRA_EXCLUDE_COMPONENTS,
+                    arrayOf(ComponentName(activity, activity.javaClass))
+                )
+            }
+        }
+        activity.runOnUiThread {
+            activity.startActivity(chooser)
+            invoke.resolve()
         }
     }
 

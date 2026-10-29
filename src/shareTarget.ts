@@ -37,3 +37,8 @@ export function onSharedText(onText: (text: string) => void): () => void {
     unregister?.();
   };
 }
+
+/** Opens the system share sheet so the user can send `text` to another app. */
+export function shareText(text: string): Promise<void> {
+  return invoke("plugin:share-target|share_text", { text });
+}

@@ -14,6 +14,10 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct ShareTarget<R: Runtime>(#[allow(dead_code)] AppHandle<R>);
 
 impl<R: Runtime> ShareTarget<R> {
+  pub fn share_text(&self, _payload: ShareTextRequest) -> crate::Result<()> {
+    Err(crate::Error::Unsupported("sharing is only available on Android and iOS"))
+  }
+
   pub fn get_shared(&self) -> crate::Result<SharedContent> {
     Ok(SharedContent::default())
   }

@@ -25,6 +25,13 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct ShareTarget<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> ShareTarget<R> {
+  pub fn share_text(&self, payload: ShareTextRequest) -> crate::Result<()> {
+    self
+      .0
+      .run_mobile_plugin("shareText", payload)
+      .map_err(Into::into)
+  }
+
   pub fn get_shared(&self) -> crate::Result<SharedContent> {
     self
       .0

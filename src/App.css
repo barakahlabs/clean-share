@@ -3,6 +3,7 @@
   --muted: #6b6b6b;
   --background: #f6f6f6;
   --surface: #ffffff;
+  --accent: #2563eb;
 
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -24,6 +25,7 @@
     --muted: #a0a0a0;
     --background: #1c1c1e;
     --surface: #2c2c2e;
+    --accent: #3b82f6;
   }
 }
 

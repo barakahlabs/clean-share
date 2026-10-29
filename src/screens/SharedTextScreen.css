@@ -41,3 +41,30 @@
   margin: 0;
   color: var(--muted);
 }
+
+.share-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.share-button {
+  min-width: 160px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.share-button:active {
+  opacity: 0.8;
+}
+
+.share-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

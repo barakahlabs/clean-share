@@ -1,10 +1,11 @@
 ## Default Permission
 
-Read shared content and listen for new shares
+Read shared content, listen for new shares, and share text to other apps
 
 #### This default permission set includes the following:
 
 - `allow-get-shared`
+- `allow-share-text`
 - `allow-register-listener`
 - `allow-remove-listener`
 
@@ -91,6 +92,32 @@ Enables the remove_listener command without any pre-configured scope.
 <td>
 
 Denies the remove_listener command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share-target:allow-share-text`
+
+</td>
+<td>
+
+Enables the share_text command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share-target:deny-share-text`
+
+</td>
+<td>
+
+Denies the share_text command without any pre-configured scope.
 
 </td>
 </tr>
