@@ -1,0 +1,37 @@
+#:schema ../schema/provider.json
+id = "facebook"
+name = "Facebook"
+domains = ["facebook.com", "fb.watch"]
+keep = ["story_fbid", "id", "v"]
+
+[[remove]]
+param = "mibextid"
+reason = "Share tracking ID from the mobile app"
+
+[[remove]]
+param = "rdid"
+reason = "Redirect tracking ID"
+
+[[remove]]
+param = "share_url"
+reason = "Original share link, used for tracking"
+
+[[remove]]
+param = "sfnsn"
+reason = "Share source flag"
+
+[[remove]]
+param = "__cft__*"
+reason = "Click tracking token"
+
+[[remove]]
+param = "__tn__"
+reason = "Click tracking flag"
+
+[[test]]
+in = "https://www.facebook.com/share/p/abc123/?mibextid=WC7FNe"
+out = "https://www.facebook.com/share/p/abc123/"
+
+[[test]]
+in = "https://www.facebook.com/permalink.php?story_fbid=1&id=2&__cft__[0]=AZX&__tn__=%2CO"
+out = "https://www.facebook.com/permalink.php?story_fbid=1&id=2"

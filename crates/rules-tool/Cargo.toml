@@ -1,0 +1,10 @@
+[package]
+name = "rules-tool"
+version = "0.1.0"
+description = "Validates, documents and bundles the tracking rules in rules/"
+edition = "2024"
+
+[dependencies]
+link-rules = { path = "../link-rules" }
+link-cleaner = { path = "../link-cleaner", default-features = false }
+serde_json = "1"

@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Provider",
+  "description": "`rules/providers/<id>.toml`: rules for one service.",
+  "type": "object",
+  "properties": {
+    "domains": {
+      "description": "Domains this provider covers. Subdomains are included.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Domain"
+      },
+      "minItems": 1
+    },
+    "except": {
+      "description": "Paths where this provider's rules don't apply (global rules still do).",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/PathPrefix"
+      }
+    },
+    "id": {
+      "description": "Must match the file name: `id = \"x\"` lives in `x.toml`.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProviderId"
+        }
+      ]
+    },
+    "keep": {
+      "description": "Parameters that make links work. Never removed, even if a global rule matches.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/ParamPattern"
+      }
+    },
+    "name": {
+      "description": "Display name, e.g. \"X / Twitter\".",
+      "type": "string"
+    },
+    "remove": {
+      "description": "Tracking parameters to remove on these domains.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/ParamRule"
+      }
+    },
+    "test": {
+      "description": "Example links and their expected cleaned version. At least one.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TestCase"
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "domains",
+    "test"
+  ],
+  "definitions": {
+    "Domain": {
+      "type": "string",
+      "examples": [
+        "youtube.com"
+      ],
+      "pattern": "^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}$"
+    },
+    "ParamPattern": {
+      "type": "string",
+      "examples": [
+        "utm_*"
+      ],
+      "pattern": "^[A-Za-z0-9_.\\-\\[\\]]+\\*?$"
+    },
+    "ParamRule": {
+      "type": "object",
+      "properties": {
+        "param": {
+          "$ref": "#/definitions/ParamPattern"
+        },
+        "reason": {
+          "description": "Why this is tracking, in plain words. Shown in docs and can be shown in the app.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "param"
+      ]
+    },
+    "PathPrefix": {
+      "type": "string",
+      "examples": [
+        "/i/redirect"
+      ],
+      "pattern": "^/\\S*$"
+    },
+    "ProviderId": {
+      "type": "string",
+      "examples": [
+        "youtube"
+      ],
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "TestCase": {
+      "type": "object",
+      "properties": {
+        "in": {
+          "description": "A link as shared by the app.",
+          "type": "string"
+        },
+        "out": {
+          "description": "The same link after cleaning.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "in",
+        "out"
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+[package]
+name = "link-rules"
+version = "0.1.0"
+description = "Typed schema, loading and validation for Clean Share's tracking rules"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+schemars = "1.2"
+toml = "1.1"

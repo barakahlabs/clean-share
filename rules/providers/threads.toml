@@ -1,0 +1,16 @@
+#:schema ../schema/provider.json
+id = "threads"
+name = "Threads"
+domains = ["threads.net", "threads.com"]
+
+[[remove]]
+param = "xmt"
+reason = "Share tracking token"
+
+[[remove]]
+param = "slof"
+reason = "Share source flag"
+
+[[test]]
+in = "https://www.threads.net/@user/post/C9abc?xmt=AQGz&slof=1"
+out = "https://www.threads.net/@user/post/C9abc"

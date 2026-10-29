@@ -1,0 +1,33 @@
+#:schema ../schema/provider.json
+id = "reddit"
+name = "Reddit"
+domains = ["reddit.com"]
+keep = ["context"]
+
+[[remove]]
+param = "share_id"
+reason = "Share ID: identifies who shared the link"
+
+[[remove]]
+param = "rdt"
+reason = "Ad click ID"
+
+[[remove]]
+param = "ref"
+reason = "Where the link was shared from"
+
+[[remove]]
+param = "ref_source"
+reason = "Where the link was shared from"
+
+[[remove]]
+param = "ref_campaign"
+reason = "Share campaign"
+
+[[test]]
+in = "https://www.reddit.com/r/rust/comments/abc/title/?share_id=Xyz&utm_medium=android_app&utm_source=share"
+out = "https://www.reddit.com/r/rust/comments/abc/title/"
+
+[[test]]
+in = "https://www.reddit.com/r/rust/comments/abc/title/def/?context=3&ref=share"
+out = "https://www.reddit.com/r/rust/comments/abc/title/def/?context=3"

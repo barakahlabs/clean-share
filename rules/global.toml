@@ -1,0 +1,118 @@
+#:schema ./schema/global.json
+# Removed from links on every site.
+
+[[remove]]
+param = "utm_*"
+reason = "Campaign tags: where the link was shared and which campaign it belongs to"
+
+[[remove]]
+param = "fbclid"
+reason = "Facebook / Instagram ad click ID"
+
+[[remove]]
+param = "gclid"
+reason = "Google Ads click ID"
+
+[[remove]]
+param = "gclsrc"
+reason = "Google Ads click source"
+
+[[remove]]
+param = "dclid"
+reason = "Google Display Ads click ID"
+
+[[remove]]
+param = "gbraid"
+reason = "Google Ads click ID (iOS app campaigns)"
+
+[[remove]]
+param = "wbraid"
+reason = "Google Ads click ID (iOS web campaigns)"
+
+[[remove]]
+param = "msclkid"
+reason = "Microsoft Ads click ID"
+
+[[remove]]
+param = "yclid"
+reason = "Yandex Ads click ID"
+
+[[remove]]
+param = "twclid"
+reason = "X (Twitter) Ads click ID"
+
+[[remove]]
+param = "ttclid"
+reason = "TikTok Ads click ID"
+
+[[remove]]
+param = "li_fat_id"
+reason = "LinkedIn Ads click ID"
+
+[[remove]]
+param = "rb_clickid"
+reason = "Rakuten click ID"
+
+[[remove]]
+param = "s_kwcid"
+reason = "Adobe Analytics keyword ID"
+
+[[remove]]
+param = "_ga"
+reason = "Google Analytics cross-site visitor ID"
+
+[[remove]]
+param = "_gl"
+reason = "Google Analytics cross-site linker"
+
+[[remove]]
+param = "_hsenc"
+reason = "HubSpot email tracking"
+
+[[remove]]
+param = "_hsmi"
+reason = "HubSpot email tracking"
+
+[[remove]]
+param = "mc_cid"
+reason = "Mailchimp campaign ID"
+
+[[remove]]
+param = "mc_eid"
+reason = "Mailchimp subscriber ID"
+
+[[remove]]
+param = "mkt_tok"
+reason = "Marketo email tracking"
+
+[[remove]]
+param = "oly_anon_id"
+reason = "Omeda email tracking"
+
+[[remove]]
+param = "oly_enc_id"
+reason = "Omeda email tracking"
+
+[[remove]]
+param = "vero_id"
+reason = "Vero email tracking"
+
+[[remove]]
+param = "igshid"
+reason = "Instagram share ID: identifies who shared the link"
+
+[[remove]]
+param = "igsh"
+reason = "Instagram share ID: identifies who shared the link"
+
+[[test]]
+in = "https://example.com/a?utm_source=x&id=7&utm_medium=y&page=2#top"
+out = "https://example.com/a?id=7&page=2#top"
+
+[[test]]
+in = "https://example.com/?fbclid=IwAR0abc&gclid=Cj0K"
+out = "https://example.com/"
+
+[[test]]
+in = "https://example.com/page?t=5"
+out = "https://example.com/page?t=5"

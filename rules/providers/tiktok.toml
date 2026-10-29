@@ -1,0 +1,92 @@
+#:schema ../schema/provider.json
+id = "tiktok"
+name = "TikTok"
+domains = ["tiktok.com"]
+
+[[remove]]
+param = "_r"
+reason = "Share tracking flag"
+
+[[remove]]
+param = "_t"
+reason = "Share tracking token"
+
+[[remove]]
+param = "is_from_webapp"
+reason = "Whether the link came from the web app"
+
+[[remove]]
+param = "is_copy_url"
+reason = "Whether the link was copied"
+
+[[remove]]
+param = "sender_device"
+reason = "Device type of the person who shared"
+
+[[remove]]
+param = "sender_web_id"
+reason = "Web ID of the person who shared"
+
+[[remove]]
+param = "share_app_id"
+reason = "App the link was shared from"
+
+[[remove]]
+param = "share_item_id"
+reason = "Shared item tracking ID"
+
+[[remove]]
+param = "share_link_id"
+reason = "Unique ID for this share"
+
+[[remove]]
+param = "social_share_type"
+reason = "How the link was shared"
+
+[[remove]]
+param = "social_sharing"
+reason = "Share tracking flag"
+
+[[remove]]
+param = "tt_from"
+reason = "Where the share came from"
+
+[[remove]]
+param = "u_code"
+reason = "User code of the person who shared"
+
+[[remove]]
+param = "user_id"
+reason = "ID of the person who shared"
+
+[[remove]]
+param = "sec_user_id"
+reason = "Encrypted ID of the person who shared"
+
+[[remove]]
+param = "checksum"
+reason = "Share tracking checksum"
+
+[[remove]]
+param = "timestamp"
+reason = "When the link was shared"
+
+[[remove]]
+param = "enter_from"
+reason = "Where in TikTok the share started"
+
+[[remove]]
+param = "source"
+reason = "Share source"
+
+[[remove]]
+param = "web_id"
+reason = "Web visitor ID"
+
+[[remove]]
+param = "preview_pb"
+reason = "Preview tracking flag"
+
+[[test]]
+in = "https://www.tiktok.com/@user/video/123?_r=1&_t=ZM-abc&is_from_webapp=1"
+out = "https://www.tiktok.com/@user/video/123"

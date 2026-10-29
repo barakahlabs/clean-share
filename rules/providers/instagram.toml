@@ -1,0 +1,19 @@
+#:schema ../schema/provider.json
+# Instagram's share IDs (igsh, igshid) are removed by global.toml, since they
+# also show up on other sites' links shared from Instagram.
+id = "instagram"
+name = "Instagram"
+domains = ["instagram.com"]
+keep = ["img_index"]
+
+[[test]]
+in = "https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MWQ1ZGUxMzBkMA=="
+out = "https://www.instagram.com/reel/C1a2B3c4D5e/"
+
+[[test]]
+in = "https://www.instagram.com/p/abc/?utm_source=ig_web_copy_link&igshid=xyz"
+out = "https://www.instagram.com/p/abc/"
+
+[[test]]
+in = "https://www.instagram.com/p/abc/?img_index=2&igsh=xyz"
+out = "https://www.instagram.com/p/abc/?img_index=2"

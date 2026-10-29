@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Global",
+  "description": "`rules/global.toml`: parameters removed on every site.",
+  "type": "object",
+  "properties": {
+    "remove": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/ParamRule"
+      }
+    },
+    "test": {
+      "description": "Example links and their expected cleaned version. At least one.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TestCase"
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "test"
+  ],
+  "definitions": {
+    "ParamPattern": {
+      "type": "string",
+      "examples": [
+        "utm_*"
+      ],
+      "pattern": "^[A-Za-z0-9_.\\-\\[\\]]+\\*?$"
+    },
+    "ParamRule": {
+      "type": "object",
+      "properties": {
+        "param": {
+          "$ref": "#/definitions/ParamPattern"
+        },
+        "reason": {
+          "description": "Why this is tracking, in plain words. Shown in docs and can be shown in the app.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "param"
+      ]
+    },
+    "TestCase": {
+      "type": "object",
+      "properties": {
+        "in": {
+          "description": "A link as shared by the app.",
+          "type": "string"
+        },
+        "out": {
+          "description": "The same link after cleaning.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "in",
+        "out"
+      ]
+    }
+  }
+}

@@ -4,5 +4,17 @@ version = "0.1.0"
 description = "Finds and removes tracking parameters from links in shared text"
 edition = "2024"
 
+[features]
+default = ["bundled"]
+# Embed the rules from rules/ (validated at build time). rules-tool turns this
+# off so it can report rule problems itself instead of failing to build.
+bundled = []
+
 [dependencies]
+link-rules = { path = "../link-rules" }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[build-dependencies]
+link-rules = { path = "../link-rules" }
+serde_json = "1"

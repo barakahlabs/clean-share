@@ -1,0 +1,20 @@
+#:schema ../schema/provider.json
+id = "spotify"
+name = "Spotify"
+domains = ["open.spotify.com"]
+
+[[remove]]
+param = "si"
+reason = "Share ID: identifies who shared the link"
+
+[[remove]]
+param = "nd"
+reason = "Share tracking flag"
+
+[[remove]]
+param = "dlsi"
+reason = "Deep link share ID"
+
+[[test]]
+in = "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=a1b2c3d4"
+out = "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"

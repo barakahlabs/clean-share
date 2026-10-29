@@ -1,0 +1,29 @@
+#:schema ../schema/provider.json
+id = "youtube"
+name = "YouTube"
+domains = ["youtube.com", "youtu.be"]
+keep = ["v", "t", "list", "index"]
+
+[[remove]]
+param = "si"
+reason = "Share ID: identifies who shared the link"
+
+[[remove]]
+param = "feature"
+reason = "Where in YouTube the link was shared from"
+
+[[remove]]
+param = "pp"
+reason = "Search and recommendation tracking"
+
+[[test]]
+in = "https://youtu.be/dQw4w9WgXcQ?si=AbCdEf123&t=42"
+out = "https://youtu.be/dQw4w9WgXcQ?t=42"
+
+[[test]]
+in = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&si=xyz&feature=shared"
+out = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+[[test]]
+in = "https://music.youtube.com/watch?v=abc&list=PL123&si=q"
+out = "https://music.youtube.com/watch?v=abc&list=PL123"

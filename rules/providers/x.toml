@@ -1,0 +1,37 @@
+#:schema ../schema/provider.json
+id = "x"
+name = "X / Twitter"
+domains = ["x.com", "twitter.com"]
+except = ["/i/redirect"]
+
+[[remove]]
+param = "a"
+reason = "Share token (newer format): identifies who shared the link"
+
+[[remove]]
+param = "t"
+reason = "Share token (older format): identifies who shared the link"
+
+[[remove]]
+param = "s"
+reason = "Which app or platform the link was shared from"
+
+[[remove]]
+param = "ref_src"
+reason = "Referral source on embedded posts"
+
+[[remove]]
+param = "ref_url"
+reason = "Page the embedded post was shown on"
+
+[[test]]
+in = "https://x.com/leviackermanft/status/2115652166325338163?a=uqa_a0BpGpaE4mGJaul&s=19"
+out = "https://x.com/leviackermanft/status/2115652166325338163"
+
+[[test]]
+in = "https://x.com/someone/status/1234567890?s=46&t=AbC-dEf_123"
+out = "https://x.com/someone/status/1234567890"
+
+[[test]]
+in = "https://twitter.com/someone/status/1?ref_src=twsrc%5Etfw"
+out = "https://twitter.com/someone/status/1"
