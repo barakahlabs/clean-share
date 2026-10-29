@@ -4,6 +4,8 @@
   --background: #f6f6f6;
   --surface: #ffffff;
   --accent: #2563eb;
+  --danger: #c81e1e;
+  --danger-bg: #fde2e2;
 
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -26,6 +28,8 @@
     --background: #1c1c1e;
     --surface: #2c2c2e;
     --accent: #3b82f6;
+    --danger: #ff6b6b;
+    --danger-bg: rgba(255, 107, 107, 0.18);
   }
 }
 

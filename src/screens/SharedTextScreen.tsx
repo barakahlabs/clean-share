@@ -1,19 +1,38 @@
 import { useEffect, useState } from "react";
 import { onSharedText, shareText } from "../shareTarget";
+import { cleanText, type Analysis } from "../linkCleaner";
 import "./SharedTextScreen.css";
 
 export function SharedTextScreen() {
-  const [text, setText] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
 
-  useEffect(() => onSharedText(setText), []);
+  useEffect(
+    () => onSharedText((text) => cleanText(text).then(setAnalysis).catch(console.error)),
+    [],
+  );
 
   return (
     <main className="shared-screen">
       <h1>Clean Share</h1>
-      {text ? (
+      {analysis ? (
         <section className="shared-card">
           <p className="shared-label">Shared with you</p>
-          <p className="shared-text">{text}</p>
+          <p className="shared-text">
+            {analysis.segments.map((segment, i) =>
+              segment.tracking ? (
+                <mark key={i} className="tracking">
+                  {segment.text}
+                </mark>
+              ) : (
+                <span key={i}>{segment.text}</span>
+              ),
+            )}
+          </p>
+          <p className={analysis.trackingCount ? "tracking-summary found" : "tracking-summary"}>
+            {analysis.trackingCount
+              ? `${trackingLabel(analysis.trackingCount)} will be removed when you share.`
+              : "No tracking found."}
+          </p>
         </section>
       ) : (
         <p className="shared-empty">
@@ -25,12 +44,16 @@ export function SharedTextScreen() {
         <button
           type="button"
           className="share-button"
-          disabled={!text}
-          onClick={() => text && shareText(text).catch(console.error)}
+          disabled={!analysis}
+          onClick={() => analysis && shareText(analysis.cleaned).catch(console.error)}
         >
-          Share
+          {analysis?.trackingCount ? "Share clean link" : "Share"}
         </button>
       </footer>
     </main>
   );
+}
+
+function trackingLabel(count: number) {
+  return count === 1 ? "1 tracking parameter" : `${count} tracking parameters`;
 }

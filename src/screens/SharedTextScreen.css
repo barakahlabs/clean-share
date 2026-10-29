@@ -68,3 +68,21 @@
   opacity: 0.4;
   cursor: default;
 }
+
+.tracking {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-radius: 4px;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.tracking-summary {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tracking-summary.found {
+  color: var(--danger);
+}
