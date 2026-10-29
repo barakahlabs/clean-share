@@ -1,0 +1,6 @@
+[tools]
+pnpm = "latest"
+
+[env]
+# Tauri Android needs NDK_HOME; NDK installed into the mise-managed android-sdk
+NDK_HOME = "{{env.HOME}}/.local/share/mise/installs/android-sdk/23.0/ndk/30.0.16248370"
