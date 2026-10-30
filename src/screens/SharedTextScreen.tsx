@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { onSharedText, shareText } from "../shareTarget";
 import { cleanText, type Analysis } from "../linkCleaner";
+import shareIcon from "../assets/share.svg";
 import "./SharedTextScreen.css";
 
 export function SharedTextScreen() {
@@ -47,6 +48,7 @@ export function SharedTextScreen() {
           disabled={!analysis}
           onClick={() => analysis && shareText(analysis.cleaned).catch(console.error)}
         >
+          <img src={shareIcon} alt="" className="share-icon" />
           {analysis?.trackingCount ? "Share clean link" : "Share"}
         </button>
       </footer>

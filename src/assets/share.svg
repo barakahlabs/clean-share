@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 118" fill="none" stroke="url(#share-gradient)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Share">
+  <defs>
+    <!-- One gradient across the whole icon, so the centered arrow gets the middle color. -->
+    <linearGradient id="share-gradient" gradientUnits="userSpaceOnUse" x1="12" y1="0" x2="88" y2="0">
+      <stop offset="0" stop-color="#5A2BE2"/>
+      <stop offset="0.5" stop-color="#5BA5DA"/>
+      <stop offset="1" stop-color="#62D8CB"/>
+    </linearGradient>
+  </defs>
+  <!-- Box, open at the top center -->
+  <path d="M37.5 36H20a8 8 0 0 0-8 8v60a8 8 0 0 0 8 8h60a8 8 0 0 0 8-8V44a8 8 0 0 0-8-8H62.5"/>
+  <!-- Arrow -->
+  <path d="M50 75V7"/>
+  <path d="M31 26 50 7 69 26"/>
+</svg>

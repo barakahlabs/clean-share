@@ -3,7 +3,7 @@
   --muted: #6b6b6b;
   --background: #f6f6f6;
   --surface: #ffffff;
-  --accent: #2563eb;
+  --border: #e2e2e6;
   --danger: #c81e1e;
   --danger-bg: #fde2e2;
 
@@ -27,7 +27,7 @@
     --muted: #a0a0a0;
     --background: #1c1c1e;
     --surface: #2c2c2e;
-    --accent: #3b82f6;
+    --border: #3a3a3c;
     --danger: #ff6b6b;
     --danger-bg: rgba(255, 107, 107, 0.18);
   }

@@ -48,16 +48,27 @@
   justify-content: center;
 }
 
+/* Light pill so the gradient share icon stays visible. */
 .share-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   min-width: 160px;
-  padding: 14px 32px;
-  border: none;
+  padding: 12px 28px;
+  border: 1px solid var(--border);
   border-radius: 999px;
   font: inherit;
   font-weight: 600;
-  color: #ffffff;
-  background: var(--accent);
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
+}
+
+.share-icon {
+  width: 24px;
+  height: 28px;
 }
 
 .share-button:active {
