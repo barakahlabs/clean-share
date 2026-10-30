@@ -35,6 +35,19 @@ the `#:schema` line at the top of each file.
 A rule file that doesn't match the schema, a domain claimed by two providers, a parameter in
 both `keep` and `remove`, or a failing test fails `check` and the app build.
 
+## References
+
+- [ClearURLs Rules](https://github.com/ClearURLs/Rules): the community rule list behind the
+  ClearURLs browser extension. Rules for 200+ sites in one file,
+  [`data.min.json`](https://raw.githubusercontent.com/ClearURLs/Rules/master/data.min.json).
+  Useful for finding parameters when adding a new provider. Our format borrows its ideas
+  (per-provider rules, exceptions) but uses domain lists and simple patterns instead of
+  regexes, and requires tests for every provider.
+  - Updated infrequently (as of October 2026 the last commit was March 2026), so check rules
+    against real shared links. For example, its Twitter rule doesn't cover `x.com` or the
+    newer `a` share token.
+  - Licensed LGPL-3.0: use it as a reference, don't copy its data files into this repo.
+
 ## Current rules
 
 <!-- BEGIN GENERATED: edit the TOML files, then run `cargo run -- generate` in crates/rules-tool -->
