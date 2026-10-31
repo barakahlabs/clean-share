@@ -34,7 +34,7 @@ in priority order within each section.
 - [ ] Run on the simulator: share from Safari → Clean Share opens with the link → tracking shown →
       Share opens the iOS share sheet with the cleaned link.
 - [ ] Run on a real iPhone: set the development team for both targets (`clean-share_iOS`,
-      `ShareExtension`) so the App Group `group.com.cleanshare.app` works.
+      `ShareExtension`) so the App Group `group.com.sirajulm.cleanshare` works.
 - [ ] Confirm the Share Extension can still open the app on the current iOS version. If Apple blocks
       it, fall back to a small confirmation UI in the extension ("Saved, open Clean Share").
 - [ ] Decide whether the extension should hide itself from our own share sheet (it currently appears
@@ -77,6 +77,15 @@ in priority order within each section.
 - [ ] Clipboard cleaning on app open ("Your clipboard has a tracked link, clean it?").
 - [ ] Settings: remove affiliate tags, quick mode, rules revision / last update.
 - [ ] Optional local-only history of cleaned links (off by default, never leaves the device).
+
+### Bookmarks
+
+Save shared links with tags, inside this app, local-only to start. Plan and data model:
+[`docs/BOOKMARKS.md`](BOOKMARKS.md).
+
+- [ ] Phase 1: "Save bookmark" share entry (Android), SQLite storage, list screen.
+- [ ] Phase 2: tags and search.
+- [ ] Phase 3: iOS share extension support.
 
 ## 6. Design and polish
 
