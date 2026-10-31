@@ -1,17 +1,23 @@
 name: clean-share
 options:
-  bundleIdPrefix: com.cleanshare.app
+  bundleIdPrefix: com.sirajulm.cleanshare
   deploymentTarget:
     iOS: 15.0
 fileGroups: [../../src]
 configs:
   debug: debug
   release: release
+settings:
+  base:
+    # Signing team for the app and the Share Extension (same as bundle.iOS.developmentTeam)
+    DEVELOPMENT_TEAM: Z22387358W
+    CODE_SIGN_STYLE: Automatic
 settingGroups:
   app:
     base:
       PRODUCT_NAME: Clean Share
-      PRODUCT_BUNDLE_IDENTIFIER: com.cleanshare.app
+      # iOS-only ID: com.cleanshare.app is taken on Apple's side (Android keeps com.cleanshare.app)
+      PRODUCT_BUNDLE_IDENTIFIER: com.sirajulm.cleanshare
 targetTemplates:
   app:
     type: application
@@ -60,13 +66,13 @@ targets:
         CFBundleVersion: "0.1.0"
         # Lets the Share Extension open the app (cleanshare://share)
         CFBundleURLTypes:
-          - CFBundleURLName: com.cleanshare.app
+          - CFBundleURLName: com.sirajulm.cleanshare
             CFBundleURLSchemes: [cleanshare]
     entitlements:
       path: clean-share_iOS/clean-share_iOS.entitlements
       properties:
         # Shared storage with the Share Extension
-        com.apple.security.application-groups: [group.com.cleanshare.app]
+        com.apple.security.application-groups: [group.com.sirajulm.cleanshare]
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full
@@ -123,9 +129,9 @@ targets:
     entitlements:
       path: ShareExtension/ShareExtension.entitlements
       properties:
-        com.apple.security.application-groups: [group.com.cleanshare.app]
+        com.apple.security.application-groups: [group.com.sirajulm.cleanshare]
     settings:
       base:
         PRODUCT_NAME: ShareExtension
-        PRODUCT_BUNDLE_IDENTIFIER: com.cleanshare.app.ShareExtension
+        PRODUCT_BUNDLE_IDENTIFIER: com.sirajulm.cleanshare.ShareExtension
         SWIFT_VERSION: "5.0"

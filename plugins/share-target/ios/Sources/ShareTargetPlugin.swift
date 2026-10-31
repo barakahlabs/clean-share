@@ -14,7 +14,7 @@ class ShareTextArgs: Decodable {
 /// with something pending, a `shared` event tells JS to call `get_shared`.
 class ShareTargetPlugin: Plugin {
   // Must match the App Group and key used by the Share Extension.
-  private let appGroup = "group.com.cleanshare.app"
+  private let appGroup = "group.com.sirajulm.cleanshare"
   private let sharedTextKey = "sharedText"
 
   private var becameActiveObserver: NSObjectProtocol?

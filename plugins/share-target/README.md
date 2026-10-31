@@ -6,7 +6,7 @@ share sheet to send text onwards.
 - **Android**: adds an `ACTION_SEND` `text/plain` intent-filter to `MainActivity` at build time
   (see `build.rs`); `android/.../ShareTargetPlugin.kt` reads the intent.
 - **iOS**: the app's Share Extension (`src-tauri/gen/apple/ShareExtension`) saves the text to the
-  `group.com.cleanshare.app` App Group and opens the app via `cleanshare://share`;
+  `group.com.sirajulm.cleanshare` App Group and opens the app via `cleanshare://share`;
   `ios/Sources/ShareTargetPlugin.swift` reads it.
 - **Sharing out**: `share_text` opens Android's share chooser (excluding this app) or iOS's
   `UIActivityViewController`.

@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 /// app's share-target plugin reads, then opens the main app.
 final class ShareViewController: UIViewController {
   // Must match ShareTargetPlugin.swift in plugins/share-target.
-  private let appGroup = "group.com.cleanshare.app"
+  private let appGroup = "group.com.sirajulm.cleanshare"
   private let sharedTextKey = "sharedText"
   private let appURL = URL(string: "cleanshare://share")!
 
