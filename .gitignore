@@ -25,3 +25,17 @@ dist-ssr
 
 # Local screenshots (not committed)
 docs/screenshots/
+
+# Signing keys and secrets: never commit (keep them in a password manager / CI secrets)
+*.jks
+*.keystore
+keystore.properties
+*.p12
+*.p8
+*.pem
+*.key
+*.mobileprovision
+*.cer
+*.certSigningRequest
+.env
+.env.*
