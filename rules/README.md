@@ -35,6 +35,12 @@ the `#:schema` line at the top of each file.
 A rule file that doesn't match the schema, a domain claimed by two providers, a parameter in
 both `keep` and `remove`, or a failing test fails `check` and the app build.
 
+## License
+
+The rules in this directory are dedicated to the public domain under
+[CC0 1.0](LICENSE): use, copy and adapt them for any purpose, no attribution needed. The code
+that reads them (`crates/`) is MIT licensed, see the [root LICENSE](../LICENSE).
+
 ## References
 
 - [ClearURLs Rules](https://github.com/ClearURLs/Rules): the community rule list behind the

@@ -3,6 +3,7 @@ name = "rules-tool"
 version = "0.1.0"
 description = "Validates, documents and bundles the tracking rules in rules/"
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 link-rules = { path = "../link-rules" }

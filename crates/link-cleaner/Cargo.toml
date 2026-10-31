@@ -3,6 +3,7 @@ name = "link-cleaner"
 version = "0.1.0"
 description = "Finds and removes tracking parameters from links in shared text"
 edition = "2024"
+license = "MIT"
 
 [features]
 default = ["bundled"]

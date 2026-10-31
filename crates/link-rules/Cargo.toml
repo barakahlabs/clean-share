@@ -3,6 +3,7 @@ name = "link-rules"
 version = "0.1.0"
 description = "Typed schema, loading and validation for Clean Share's tracking rules"
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

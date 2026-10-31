@@ -1,9 +1,10 @@
 [package]
 name = "clean-share"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Clean Share: remove tracking from shared links"
+authors = ["Sirajul Muneer"]
 edition = "2024"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

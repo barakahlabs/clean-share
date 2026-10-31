@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = [ "Sirajul Muneer" ]
 description = "Receive text shared from other apps (Android share sheet / iOS Share Extension)"
 edition = "2024"
+license = "MIT"
 rust-version = "1.90"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
 links = "tauri-plugin-share-target"
