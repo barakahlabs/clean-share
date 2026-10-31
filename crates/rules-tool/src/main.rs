@@ -132,7 +132,16 @@ fn readme_tables(rules: &RuleSet) -> String {
       p.name,
       p.id,
       code_list(p.domains.iter().map(ToString::to_string).collect()),
-      params(&p.remove),
+      if p.strip_unknown {
+        let listed = params(&p.remove);
+        if p.remove.is_empty() {
+          "everything not kept".to_string()
+        } else {
+          format!("everything not kept, incl. {listed}")
+        }
+      } else {
+        params(&p.remove)
+      },
       code_list(p.keep.iter().map(ToString::to_string).collect()),
       code_list(p.except.iter().map(ToString::to_string).collect()),
     ));
@@ -143,8 +152,21 @@ fn readme_tables(rules: &RuleSet) -> String {
 
   for p in &rules.providers {
     md.push_str(&format!("\n### {} ([providers/{}.toml](providers/{}.toml))\n\n", p.name, p.id, p.id));
+    if p.strip_unknown {
+      md.push_str(&format!(
+        "Removes **every** parameter except {} (`strip_unknown = true`), so new tracking names are covered automatically.",
+        if p.keep.is_empty() {
+          "none".to_string()
+        } else {
+          p.keep.iter().map(|k| format!("`{k}`")).collect::<Vec<_>>().join(", ")
+        }
+      ));
+      md.push_str(if p.remove.is_empty() { "\n" } else { " Known ones:\n\n" });
+    }
     if p.remove.is_empty() {
-      md.push_str("No site-specific parameters; the every-site rules apply.\n");
+      if !p.strip_unknown {
+        md.push_str("No site-specific parameters; the every-site rules apply.\n");
+      }
     } else {
       md.push_str(&param_table(&p.remove));
     }

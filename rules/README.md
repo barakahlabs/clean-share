@@ -52,21 +52,21 @@ both `keep` and `remove`, or a failing test fails `check` and the app build.
 
 <!-- BEGIN GENERATED: edit the TOML files, then run `cargo run -- generate` in crates/rules-tool -->
 
-Rules revision `2026-10-30.1`.
+Rules revision `2026-10-31.2`.
 
 ### Overview
 
 | Platform | Domains | Removed | Always kept | Not applied on |
 |---|---|---|---|---|
 | [Facebook](providers/facebook.toml) | `facebook.com`, `fb.watch` | `mibextid`, `rdid`, `share_url`, `sfnsn`, `__cft__*`, `__tn__` | `story_fbid`, `id`, `v` | – |
-| [Instagram](providers/instagram.toml) | `instagram.com` | – | `img_index` | – |
+| [Instagram](providers/instagram.toml) | `instagram.com` | everything not kept, incl. `srtk`, `psln`, `obrf` | `img_index` | – |
 | [LinkedIn](providers/linkedin.toml) | `linkedin.com` | `trk`, `trackingId`, `lipi`, `midToken`, `midSig`, `trkEmail`, `eid`, `rcm` | – | – |
 | [Reddit](providers/reddit.toml) | `reddit.com` | `share_id`, `rdt`, `ref`, `ref_source`, `ref_campaign` | `context` | – |
 | [Spotify](providers/spotify.toml) | `open.spotify.com` | `si`, `nd`, `dlsi` | – | – |
 | [Threads](providers/threads.toml) | `threads.net`, `threads.com` | `xmt`, `slof` | – | – |
 | [TikTok](providers/tiktok.toml) | `tiktok.com` | `_r`, `_t`, `is_from_webapp`, `is_copy_url`, `sender_device`, `sender_web_id`, `share_app_id`, `share_item_id`, `share_link_id`, `social_share_type`, `social_sharing`, `tt_from`, `u_code`, `user_id`, `sec_user_id`, `checksum`, `timestamp`, `enter_from`, `source`, `web_id`, `preview_pb` | – | – |
 | [X / Twitter](providers/x.toml) | `x.com`, `twitter.com` | `a`, `t`, `s`, `ref_src`, `ref_url` | – | `/i/redirect` |
-| [YouTube](providers/youtube.toml) | `youtube.com`, `youtu.be` | `si`, `feature`, `pp` | `v`, `t`, `list`, `index` | – |
+| [YouTube](providers/youtube.toml) | `youtube.com`, `youtu.be` | `si`, `is`, `feature`, `pp` | `v`, `t`, `list`, `index` | – |
 
 ### Removed on every site ([global.toml](global.toml))
 
@@ -112,7 +112,13 @@ Rules revision `2026-10-30.1`.
 
 ### Instagram ([providers/instagram.toml](providers/instagram.toml))
 
-No site-specific parameters; the every-site rules apply.
+Removes **every** parameter except `img_index` (`strip_unknown = true`), so new tracking names are covered automatically. Known ones:
+
+| Parameter | Why it's removed |
+|---|---|
+| `srtk` | Share tracking token |
+| `psln` | Share tracking token |
+| `obrf` | Share tracking token |
 
 ### LinkedIn ([providers/linkedin.toml](providers/linkedin.toml))
 
@@ -193,6 +199,7 @@ No site-specific parameters; the every-site rules apply.
 | Parameter | Why it's removed |
 |---|---|
 | `si` | Share ID: identifies who shared the link |
+| `is` | Share ID (newer format): identifies who shared the link |
 | `feature` | Where in YouTube the link was shared from |
 | `pp` | Search and recommendation tracking |
 
@@ -204,6 +211,8 @@ No site-specific parameters; the every-site rules apply.
 | Facebook | `https://www.facebook.com/permalink.php?story_fbid=1&id=2&__cft__[0]=AZX&__tn__=%2CO` | `https://www.facebook.com/permalink.php?story_fbid=1&id=2` |
 | Instagram | `https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MWQ1ZGUxMzBkMA==` | `https://www.instagram.com/reel/C1a2B3c4D5e/` |
 | Instagram | `https://www.instagram.com/p/abc/?utm_source=ig_web_copy_link&igshid=xyz` | `https://www.instagram.com/p/abc/` |
+| Instagram | `https://www.instagram.com/reel/C1a2B3c4D5e/?srtk=aB3dEf9GhIj` | `https://www.instagram.com/reel/C1a2B3c4D5e/` |
+| Instagram | `https://www.instagram.com/reel/C1a2B3c4D5e/?psln=Q2xvdWQ&obrf=7Hk2` | `https://www.instagram.com/reel/C1a2B3c4D5e/` |
 | Instagram | `https://www.instagram.com/p/abc/?img_index=2&igsh=xyz` | `https://www.instagram.com/p/abc/?img_index=2` |
 | LinkedIn | `https://www.linkedin.com/posts/someone_activity-123?utm_source=share&rcm=ACoAA&trk=public_post` | `https://www.linkedin.com/posts/someone_activity-123` |
 | Reddit | `https://www.reddit.com/r/rust/comments/abc/title/?share_id=Xyz&utm_medium=android_app&utm_source=share` | `https://www.reddit.com/r/rust/comments/abc/title/` |
@@ -216,6 +225,7 @@ No site-specific parameters; the every-site rules apply.
 | X / Twitter | `https://twitter.com/someone/status/1?ref_src=twsrc%5Etfw` | `https://twitter.com/someone/status/1` |
 | YouTube | `https://youtu.be/dQw4w9WgXcQ?si=AbCdEf123&t=42` | `https://youtu.be/dQw4w9WgXcQ?t=42` |
 | YouTube | `https://www.youtube.com/watch?v=dQw4w9WgXcQ&si=xyz&feature=shared` | `https://www.youtube.com/watch?v=dQw4w9WgXcQ` |
+| YouTube | `https://youtu.be/dQw4w9WgXcQ?is=Xk3pQ9rT2mLw&t=15` | `https://youtu.be/dQw4w9WgXcQ?t=15` |
 | YouTube | `https://music.youtube.com/watch?v=abc&list=PL123&si=q` | `https://music.youtube.com/watch?v=abc&list=PL123` |
 | Any site | `https://example.com/a?utm_source=x&id=7&utm_medium=y&page=2#top` | `https://example.com/a?id=7&page=2#top` |
 | Any site | `https://example.com/?fbclid=IwAR0abc&gclid=Cj0K` | `https://example.com/` |

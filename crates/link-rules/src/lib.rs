@@ -63,6 +63,10 @@ pub struct Provider {
   /// Paths where this provider's rules don't apply (global rules still do).
   #[serde(default)]
   pub except: Vec<PathPrefix>,
+  /// Remove every parameter not listed in `keep`. For sites whose links work without query
+  /// parameters and that keep inventing new tracking names (e.g. Instagram).
+  #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+  pub strip_unknown: bool,
   /// Example links and their expected cleaned version. At least one.
   #[serde(rename = "test")]
   #[schemars(length(min = 1))]

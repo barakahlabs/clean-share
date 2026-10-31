@@ -126,7 +126,9 @@ pub fn is_tracking(rules: &RuleSet, host: &str, path: &str, name: &str) -> bool 
       return false;
     }
     let excepted = provider.except.iter().any(|prefix| path.starts_with(prefix.as_str()));
-    if !excepted && provider.remove.iter().any(|r| r.param.matches(name)) {
+    if !excepted
+      && (provider.strip_unknown || provider.remove.iter().any(|r| r.param.matches(name)))
+    {
       return true;
     }
   }
@@ -275,7 +277,7 @@ mod tests {
     assert_eq!(cleaned("https://youtu.be/x?t=5"), "https://youtu.be/x?t=5");
     assert_eq!(cleaned("https://example.com/page?t=5"), "https://example.com/page?t=5");
     // `a` is tracking only on X.
-    assert_eq!(cleaned("https://www.instagram.com/p/abc/?a=1"), "https://www.instagram.com/p/abc/?a=1");
+    assert_eq!(cleaned("https://www.reddit.com/r/x/?a=1"), "https://www.reddit.com/r/x/?a=1");
     // Lookalike domains don't match.
     assert_eq!(cleaned("https://notx.com/a?s=1"), "https://notx.com/a?s=1");
   }
@@ -292,6 +294,17 @@ mod tests {
       cleaned("https://x.com/i/redirect?t=1&utm_source=x"),
       "https://x.com/i/redirect?t=1"
     );
+  }
+
+  #[test]
+  fn strip_unknown_removes_everything_except_keep() {
+    // Instagram uses strip_unknown: names we've never seen are removed too.
+    assert_eq!(
+      cleaned("https://www.instagram.com/reel/abc/?zqxw=1&img_index=3&brandnew=x"),
+      "https://www.instagram.com/reel/abc/?img_index=3"
+    );
+    // Other providers only remove what they list.
+    assert_eq!(cleaned("https://youtu.be/x?zqxw=1"), "https://youtu.be/x?zqxw=1");
   }
 
   #[test]

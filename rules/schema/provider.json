@@ -48,6 +48,10 @@
         "$ref": "#/definitions/ParamRule"
       }
     },
+    "strip_unknown": {
+      "description": "Remove every parameter not listed in `keep`. For sites whose links work without query\nparameters and that keep inventing new tracking names (e.g. Instagram).",
+      "type": "boolean"
+    },
     "test": {
       "description": "Example links and their expected cleaned version. At least one.",
       "type": "array",

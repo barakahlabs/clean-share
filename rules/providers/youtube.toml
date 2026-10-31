@@ -9,6 +9,10 @@ param = "si"
 reason = "Share ID: identifies who shared the link"
 
 [[remove]]
+param = "is"
+reason = "Share ID (newer format): identifies who shared the link"
+
+[[remove]]
 param = "feature"
 reason = "Where in YouTube the link was shared from"
 
@@ -23,6 +27,10 @@ out = "https://youtu.be/dQw4w9WgXcQ?t=42"
 [[test]]
 in = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&si=xyz&feature=shared"
 out = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+[[test]]
+in = "https://youtu.be/dQw4w9WgXcQ?is=Xk3pQ9rT2mLw&t=15"
+out = "https://youtu.be/dQw4w9WgXcQ?t=15"
 
 [[test]]
 in = "https://music.youtube.com/watch?v=abc&list=PL123&si=q"
