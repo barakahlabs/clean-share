@@ -9,8 +9,11 @@ export function SettingsScreen() {
   const [page, setPage] = useState<"main" | "tags">("main");
   const [tagCount, setTagCount] = useState<number | null>(null);
 
+  // Back from Tags returns here. A sheet opened inside Tags has its own history entry; closing
+  // it lands back on the Tags entry, so stay on Tags then.
   useEffect(() => {
-    const onBack = () => setPage("main");
+    const onBack = (event: PopStateEvent) =>
+      setPage(event.state?.settingsPage === "tags" ? "tags" : "main");
     window.addEventListener("popstate", onBack);
     return () => window.removeEventListener("popstate", onBack);
   }, []);
