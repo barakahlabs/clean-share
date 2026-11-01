@@ -1,0 +1,6 @@
+# Runner labels actionlint doesn't know about (Blacksmith, https://docs.blacksmith.sh).
+self-hosted-runner:
+  labels:
+    - blacksmith-2vcpu-ubuntu-2404
+    - blacksmith-4vcpu-ubuntu-2404
+    - blacksmith-6vcpu-macos-latest
