@@ -14,8 +14,13 @@ share sheet to send text onwards.
 
 ## JS usage
 
+Each share also says which share-sheet entry was picked: `intent` is `"share"` (Clean & Share)
+or `"save"` (Save bookmark). Android reads it from the component the share arrived on (an
+`activity-alias` ending in `.SaveBookmark` is "save"); iOS from the `sharedIntent` App Group key
+that each Share Extension writes. Anything else counts as `"share"`.
+
 ```ts
-invoke("plugin:share-target|get_shared")          // { text?: string }, clears it
+invoke("plugin:share-target|get_shared")          // { text?: string, intent?: "share" | "save" }, clears it
 addPluginListener("share-target", "shared", ...)  // fired when a new share arrives
 invoke("plugin:share-target|share_text", { text }) // opens the share sheet
 ```
