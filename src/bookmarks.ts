@@ -35,8 +35,8 @@ export type Bookmark = {
 
 export type Link = { original: string; cleaned: string; provider: string | null };
 
-/** What the save screen shows before saving. */
-export type Prepared = { links: Link[]; existing: Bookmark | null };
+/** What the save screen shows before saving. `title` is suggested from the shared text. */
+export type Prepared = { links: Link[]; existing: Bookmark | null; title: string | null };
 
 export type NewBookmark = {
   sharedText: string;
@@ -47,6 +47,9 @@ export type NewBookmark = {
 
 /** `created` is false when the link was already saved and the new tags were merged in. */
 export type Saved = { bookmark: Bookmark; created: boolean };
+
+/** Fields to change. A missing field is left as is; `""` clears it. */
+export type BookmarkPatch = { title?: string; note?: string };
 
 export type ListQuery = {
   search?: string | null;
@@ -72,6 +75,15 @@ export function listBookmarks(query: ListQuery = {}): Promise<Page<Bookmark>> {
 
 export function getBookmark(id: string): Promise<Bookmark | null> {
   return invoke("bookmark_get", { id });
+}
+
+export function updateBookmark(id: string, patch: BookmarkPatch): Promise<Bookmark> {
+  return invoke("bookmark_update", { id, patch });
+}
+
+/** Replaces a bookmark's tags; new names are created. */
+export function setBookmarkTags(id: string, tags: TagInput[]): Promise<BookmarkTag[]> {
+  return invoke("bookmark_set_tags", { id, tags });
 }
 
 export function deleteBookmark(id: string): Promise<void> {
