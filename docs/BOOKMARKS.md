@@ -130,7 +130,7 @@ Paid sync only (phase 8):
 
 ## Data model
 
-Schema v1 lives in `crates/bookmarks/src/migrate.rs`; this is a summary. Created with all columns,
+Schema v1 lives in `crates/bookmarks/migrations/0001_init.sql`; this is a summary. Created with all columns,
 so later phases only fill them in. Migrations use `PRAGMA user_version`. Each phone migrates its own
 database on open, so there is never a server job that migrates every user's database. A database
 with a newer version than the app knows (e.g. synced from a phone with a newer app) is refused with
@@ -203,10 +203,13 @@ setting               not yet: added by a migration when the first synced prefer
 ## Rust API (`crates/bookmarks`)
 
 ```text
+crates/bookmarks/migrations/
+  0001_init.sql one SQL file per schema version, compiled into the app
+
 crates/bookmarks/src/
   lib.rs        crate docs: one database = one user
   db.rs         where data lives: Location::{Memory, File} → turso::Connection   (sync.rs joins here)
-  migrate.rs    schema versions (PRAGMA user_version), refuses newer schemas
+  migrate.rs    runs migrations/NNNN_*.sql in order (PRAGMA user_version), refuses newer schemas
   ids.rs        content-derived UUIDv5 ids
   cleaner.rs    Cleaner trait: BundledRules, Rules(RuleSet) for downloaded rules
   clock.rs      Clock trait (tests use a fake clock)
