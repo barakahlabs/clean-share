@@ -6,9 +6,22 @@ pub struct ShareTextRequest {
   pub text: String,
 }
 
-/// Content another app shared with us. `None` when nothing is pending.
+/// Content another app shared with us. `text` is `None` when nothing is pending.
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SharedContent {
   pub text: Option<String>,
+  /// Which share-sheet entry the user picked. Set whenever `text` is.
+  pub intent: Option<ShareIntent>,
+}
+
+/// The share-sheet entry the user picked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ShareIntent {
+  /// "Clean & Share": clean the link and share it onwards.
+  #[default]
+  Share,
+  /// "Save bookmark": clean the link and save it.
+  Save,
 }
