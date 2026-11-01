@@ -27,8 +27,9 @@ export function BottomSheet({ onClose, labelledBy, role = "dialog", children }: 
   const style = {
     "--keyboard-inset": `${viewport.keyboard}px`,
     "--visible-height": `${viewport.height}px`,
-    // The home-indicator gap only matters when the sheet sits on the screen's bottom edge.
-    "--sheet-safe-bottom": viewport.keyboard ? "0px" : "env(safe-area-inset-bottom)",
+    // On the screen's bottom edge the sheet clears the home indicator; on the keyboard it only
+    // needs a little room.
+    "--sheet-pad-bottom": viewport.keyboard ? "12px" : "calc(env(safe-area-inset-bottom) + 20px)",
   } as CSSProperties;
 
   return (
