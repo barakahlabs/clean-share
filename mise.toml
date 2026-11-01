@@ -1,6 +1,18 @@
 [tools]
-pnpm = "latest"
+# Pinned so CI (.github/workflows/ci.yml) and every machine build with the same versions.
+node = "26"
+pnpm = "12"
+java = "corretto-21.0.3.9.1"
+# Android command-line tools only; SDK packages come from `mise run android:sdk`.
+android-sdk = "23.0"
 
 [env]
-# Tauri Android needs NDK_HOME; NDK installed into the mise-managed android-sdk
+# Tauri Android needs NDK_HOME. Keep the NDK version in sync with the android:sdk task.
 NDK_HOME = "{{env.HOME}}/.local/share/mise/installs/android-sdk/23.0/ndk/30.0.16248370"
+
+[tasks."android:sdk"]
+description = "Install the Android SDK packages the app builds with (platform 37, NDK 30)"
+run = [
+  "yes | sdkmanager --licenses > /dev/null",
+  'sdkmanager --install "platform-tools" "platforms;android-37.0" "build-tools;37.0.0" "ndk;30.0.16248370"',
+]
