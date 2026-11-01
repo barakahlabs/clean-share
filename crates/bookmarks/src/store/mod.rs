@@ -150,13 +150,11 @@ impl Store {
     self.get(id).await?.ok_or(Error::NotFound)
   }
 
+  /// Deletes a bookmark. Its tags stay, even if no other bookmark uses them.
   pub async fn delete(&mut self, id: &str) -> Result<()> {
-    let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Immediate).await?;
-    if tx.execute("DELETE FROM bookmark WHERE id = ?1", [id]).await? == 0 {
+    if self.conn.execute("DELETE FROM bookmark WHERE id = ?1", [id]).await? == 0 {
       return Err(Error::NotFound);
     }
-    tags::remove_unused(&tx).await?;
-    tx.commit().await?;
     Ok(())
   }
 
