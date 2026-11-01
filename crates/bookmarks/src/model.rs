@@ -103,6 +103,8 @@ pub struct Prepared {
   pub links: Vec<link_cleaner::Link>,
   /// The bookmark for the first link, if it's already saved.
   pub existing: Option<Bookmark>,
+  /// Title suggested from the shared text around the first link (what `save` would use).
+  pub title: Option<String>,
 }
 
 /// Fields to change. `None` leaves a field as is; `Some("")` clears it.

@@ -3,7 +3,8 @@
 use std::path::PathBuf;
 
 use ::bookmarks::{
-    Bookmark, ListQuery, NewBookmark, Page, Prepared, Saved, Store, TagCount, db::Location,
+    Bookmark, BookmarkPatch, BookmarkTag, ListQuery, NewBookmark, Page, Prepared, Saved, Store,
+    TagCount, TagInput, db::Location,
 };
 use serde::{Serialize, Serializer};
 use tauri::{AppHandle, Manager, State, async_runtime::Mutex};
@@ -118,6 +119,26 @@ pub async fn bookmark_get(
     id: String,
 ) -> CommandResult<Option<Bookmark>> {
     with_store!(library, |store| store.get(&id))
+}
+
+/// Changes a bookmark's title and note (`""` clears a field, a missing field is left as is).
+#[tauri::command]
+pub async fn bookmark_update(
+    library: State<'_, Library>,
+    id: String,
+    patch: BookmarkPatch,
+) -> CommandResult<Bookmark> {
+    with_store!(library, |store| store.update(&id, patch))
+}
+
+/// Replaces a bookmark's tags. New tag names are created.
+#[tauri::command]
+pub async fn bookmark_set_tags(
+    library: State<'_, Library>,
+    id: String,
+    tags: Vec<TagInput>,
+) -> CommandResult<Vec<BookmarkTag>> {
+    with_store!(library, |store| store.set_tags(&id, &tags))
 }
 
 #[tauri::command]
