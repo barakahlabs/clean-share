@@ -1,20 +1,33 @@
 import { useEffect, useState } from "react";
-import { onShared, shareText } from "../shareTarget";
+import { shareText } from "../shareTarget";
 import { cleanText, type Analysis } from "../linkCleaner";
 import shareIcon from "../assets/share.svg";
+import "./Screen.css";
 import "./SharedTextScreen.css";
 
-export function SharedTextScreen() {
+/** Shows text shared from another app with its tracking highlighted, and shares it cleaned. */
+export function SharedTextScreen({ text, onClose }: { text: string; onClose: () => void }) {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
 
-  useEffect(
-    () => onShared(({ text }) => cleanText(text).then(setAnalysis).catch(console.error)),
-    [],
-  );
+  useEffect(() => {
+    let current = true;
+    setAnalysis(null);
+    cleanText(text)
+      .then((result) => current && setAnalysis(result))
+      .catch(console.error);
+    return () => {
+      current = false;
+    };
+  }, [text]);
 
   return (
-    <main className="shared-screen">
-      <h1>Clean Share</h1>
+    <main className="screen">
+      <header className="screen-header">
+        <h1>Clean Share</h1>
+        <button type="button" className="text-button" onClick={onClose}>
+          Done
+        </button>
+      </header>
       {analysis ? (
         <section className="shared-card">
           <p className="shared-label">Shared with you</p>
@@ -36,9 +49,7 @@ export function SharedTextScreen() {
           </p>
         </section>
       ) : (
-        <p className="shared-empty">
-          Share a link or some text from another app and pick Clean Share. It will show up here.
-        </p>
+        <p className="screen-empty">Cleaning…</p>
       )}
 
       <footer className="share-footer">
