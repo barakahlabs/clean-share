@@ -24,6 +24,8 @@ pub fn run() {
             bookmarks::bookmark_save,
             bookmarks::bookmark_list,
             bookmarks::bookmark_get,
+            bookmarks::bookmark_update,
+            bookmarks::bookmark_set_tags,
             bookmarks::bookmark_delete,
             bookmarks::tag_list,
             bookmarks::tag_rename,

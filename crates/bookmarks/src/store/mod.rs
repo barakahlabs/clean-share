@@ -50,23 +50,25 @@ impl Store {
     self.cleaner = cleaner;
   }
 
-  /// Cleans the links in `text` and finds whether the first one is already saved.
+  /// Cleans the links in `text`, finds whether the first one is already saved, and suggests a
+  /// title from the text around it.
   pub async fn prepare(&self, text: &str) -> Result<Prepared> {
     let links = self.cleaner.links(text);
-    let existing = match links.first() {
-      Some(link) => self.find_by_url(&link.cleaned).await?,
-      None => None,
+    let (existing, title) = match links.first() {
+      Some(link) => (self.find_by_url(&link.cleaned).await?, title_from(text, &links)),
+      None => (None, None),
     };
-    Ok(Prepared { links, existing })
+    Ok(Prepared { links, existing, title })
   }
 
   /// Saves the first link in `new.shared_text`. If that link (after cleaning) is already saved,
   /// merges into the existing bookmark instead: adds the new tags, and fills title and note only
   /// where they were empty.
   pub async fn save(&mut self, new: NewBookmark) -> Result<Saved> {
-    let link = self.cleaner.links(&new.shared_text).into_iter().next().ok_or(Error::NoLink)?;
+    let links = self.cleaner.links(&new.shared_text);
+    let link = links.first().cloned().ok_or(Error::NoLink)?;
     let now = self.clock.now_ms();
-    let title = clean_opt(new.title).or_else(|| title_from(&new.shared_text, &link.original));
+    let title = clean_opt(new.title).or_else(|| title_from(&new.shared_text, &links));
     let note = clean_opt(new.note);
     let existing = self.find_by_url(&link.cleaned).await?;
 
@@ -183,9 +185,10 @@ fn clean_opt(text: Option<String>) -> Option<String> {
   text.map(|t| t.trim().to_string()).filter(|t| !t.is_empty())
 }
 
-/// The shared text without the link, if anything is left ("Great talk https://…" → "Great talk").
-fn title_from(shared_text: &str, link: &str) -> Option<String> {
-  let rest = shared_text.replacen(link, " ", 1);
+/// The shared text without its links, if anything is left ("Great talk https://…" → "Great talk").
+fn title_from(shared_text: &str, links: &[link_cleaner::Link]) -> Option<String> {
+  let rest =
+    links.iter().fold(shared_text.to_string(), |text, link| text.replacen(&link.original, " ", 1));
   let title = rest.split_whitespace().collect::<Vec<_>>().join(" ");
   let title = title.trim_matches(|c: char| c.is_whitespace() || matches!(c, '-' | '–' | '|' | ':'));
   (!title.is_empty()).then(|| title.to_string())
