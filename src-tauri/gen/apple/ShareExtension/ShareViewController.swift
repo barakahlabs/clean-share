@@ -9,6 +9,9 @@ final class ShareViewController: UIViewController {
   // Must match ShareTargetPlugin.swift in plugins/share-target.
   private let appGroup = "group.com.sirajulm.cleanshare"
   private let sharedTextKey = "sharedText"
+  private let sharedIntentKey = "sharedIntent"
+  /// This extension is the "Clean & Share" entry.
+  private let intent = "share"
   private let appURL = URL(string: "cleanshare://share")!
 
   override func viewDidLoad() {
@@ -19,7 +22,9 @@ final class ShareViewController: UIViewController {
   @MainActor
   private func handleShare() async {
     if let text = await loadSharedText(), !text.isEmpty {
-      UserDefaults(suiteName: appGroup)?.set(text, forKey: sharedTextKey)
+      let defaults = UserDefaults(suiteName: appGroup)
+      defaults?.set(text, forKey: sharedTextKey)
+      defaults?.set(intent, forKey: sharedIntentKey)
       openMainApp()
     }
     extensionContext?.completeRequest(returningItems: nil)

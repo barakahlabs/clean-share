@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { onSharedText, shareText } from "../shareTarget";
+import { onShared, shareText } from "../shareTarget";
 import { cleanText, type Analysis } from "../linkCleaner";
 import shareIcon from "../assets/share.svg";
 import "./SharedTextScreen.css";
@@ -8,7 +8,7 @@ export function SharedTextScreen() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
 
   useEffect(
-    () => onSharedText((text) => cleanText(text).then(setAnalysis).catch(console.error)),
+    () => onShared(({ text }) => cleanText(text).then(setAnalysis).catch(console.error)),
     [],
   );
 

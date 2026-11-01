@@ -1,25 +1,31 @@
 import { addPluginListener, invoke } from "@tauri-apps/api/core";
 
-type SharedContent = { text?: string | null };
+/** Which share-sheet entry the user picked: "Clean & Share" or "Save bookmark". */
+export type ShareIntent = "share" | "save";
 
-/** Returns text shared from another app and clears it, or null if nothing is pending. */
-export async function getSharedText(): Promise<string | null> {
+/** Something another app shared with us. */
+export type Shared = { text: string; intent: ShareIntent };
+
+type SharedContent = { text?: string | null; intent?: ShareIntent | null };
+
+/** Returns what another app shared and clears it, or null if nothing is pending. */
+export async function getShared(): Promise<Shared | null> {
   const shared = await invoke<SharedContent>("plugin:share-target|get_shared");
-  return shared.text ?? null;
+  return shared.text ? { text: shared.text, intent: shared.intent ?? "share" } : null;
 }
 
 /**
- * Calls `onText` with text shared from another app: once for a share that
+ * Calls `onShare` with what another app shared: once for a share that
  * launched the app, then again for each share while it's running.
  * Returns a cleanup function.
  */
-export function onSharedText(onText: (text: string) => void): () => void {
+export function onShared(onShare: (shared: Shared) => void): () => void {
   let unregister: (() => void) | undefined;
   let stopped = false;
 
   const deliver = () =>
-    getSharedText()
-      .then((text) => text && onText(text))
+    getShared()
+      .then((shared) => shared && onShare(shared))
       .catch(console.error);
 
   deliver();
