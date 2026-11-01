@@ -70,7 +70,10 @@ export function TagPicker({ selected, available, onChange }: Props) {
           role="combobox"
           aria-expanded={open}
           aria-controls={listId}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true);
+            scrollIntoViewWhenKeyboardOpens(input.current);
+          }}
           onBlur={() => setOpen(false)}
           onChange={(event) => {
             const value = event.target.value;
@@ -116,6 +119,36 @@ export function TagPicker({ selected, available, onChange }: Props) {
     </div>
   );
 }
+
+/**
+ * Brings the field (and the suggestions under it) to the top of its scrolling container, in one
+ * instant jump once the keyboard has finished opening, so nothing moves under a finger afterwards.
+ * Android resizes the page for the keyboard (several resize events while it animates); iOS
+ * changes the visual viewport instead. We wait until the resizing settles, then scroll.
+ */
+function scrollIntoViewWhenKeyboardOpens(field: HTMLElement | null) {
+  if (!field) return;
+  const viewport = window.visualViewport;
+  let timer = 0;
+  const finish = () => {
+    viewport?.removeEventListener("resize", settle);
+    window.removeEventListener("resize", settle);
+    field.scrollIntoView({ block: "start" });
+  };
+  function settle() {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(finish, SETTLE_MS);
+  }
+  viewport?.addEventListener("resize", settle);
+  window.addEventListener("resize", settle);
+  // If the keyboard is already open (moving from another field) no resize comes at all.
+  timer = window.setTimeout(finish, NO_RESIZE_MS);
+}
+
+/** Quiet time after the last resize event before the keyboard counts as open. */
+const SETTLE_MS = 120;
+/** How long to wait for a first resize before scrolling anyway. */
+const NO_RESIZE_MS = 450;
 
 /** Same cleanup as the store: trim, drop a leading #, collapse inner spaces. */
 function normalize(name: string) {
