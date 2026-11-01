@@ -1,3 +1,7 @@
+mod bookmarks;
+
+use tauri::Manager;
+
 /// Splits shared text into tracking / non-tracking pieces and returns the cleaned text.
 #[tauri::command]
 fn clean_text(text: &str) -> link_cleaner::Analysis {
@@ -9,7 +13,19 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_share_target::init())
-        .invoke_handler(tauri::generate_handler![clean_text])
+        .setup(|app| {
+            let library = bookmarks::Library::open_local(app.handle());
+            app.manage(library);
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            clean_text,
+            bookmarks::bookmark_prepare,
+            bookmarks::bookmark_save,
+            bookmarks::bookmark_list,
+            bookmarks::bookmark_get,
+            bookmarks::bookmark_delete,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
