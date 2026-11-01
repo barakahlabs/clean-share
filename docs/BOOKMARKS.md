@@ -421,7 +421,8 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 
 ### Phase 2 – Tags, search, suggestions (tier 1)
 - [x] Store: tags, filter by tags (AND), search-as-you-type (ngram), rename/merge/delete tags.
-- [ ] Tag input with autocomplete; tag filter and search UI.
+- [x] Tag input with autocomplete (save sheet); Bookmarks tab: search box (as you type) and tag
+      filter chips (all selected tags must match), with "Clear filters" when nothing matches.
 - [ ] `crates/tag-suggest` `MatchSuggester` + tests; `tag_suggest` command; chips on the save screen.
 - **Done when:** search finds by any word in title/note/tags; suggestions appear for repeat sites.
 

@@ -54,3 +54,53 @@
 .load-more {
   align-self: center;
 }
+
+.bookmark-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -8px;
+}
+
+.bookmark-search {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+}
+
+/* One scrollable row of chips, so many tags don't push the list down. */
+.tag-filter {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 -20px;
+  padding: 0 20px 2px;
+  scrollbar-width: none;
+}
+
+.tag-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.tag-filter-chip {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.tag-filter-chip.on {
+  border-color: transparent;
+  color: var(--background);
+  background: var(--text);
+}
