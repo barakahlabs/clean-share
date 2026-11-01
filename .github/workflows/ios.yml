@@ -1,18 +1,9 @@
 name: iOS
 
-# GitHub's standard macOS runners are free for public repos (an M1 with 3 cores, slower than
-# Blacksmith's). If this repo ever goes private, macOS minutes cost money: make this manual-only
-# or move it to Blacksmith (blacksmith-6vcpu-macos-latest).
+# Manual only: Actions → iOS → Run workflow (pick the branch to build).
+# Runs on GitHub's standard macOS runners, free for public repos (an M1 with 3 cores, slower than
+# Blacksmith's). If this repo ever goes private, macOS minutes cost money on GitHub too.
 on:
-  # Only PRs that can change the iOS app; anything else can be checked by hand.
-  pull_request:
-    paths:
-      - "src-tauri/gen/apple/**"
-      - "src-tauri/tauri.ios.conf.json"
-      - "plugins/share-target/ios/**"
-      - "plugins/share-target/src/**"
-      - ".github/workflows/ios.yml"
-  # Run by hand: Actions → iOS → Run workflow.
   workflow_dispatch:
 
 concurrency:
