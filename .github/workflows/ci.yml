@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+  workflow_dispatch:
+
+# One run per branch or PR: a new push cancels the run it replaces.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  rust:
+    name: Rust crates (clippy, tests, rules)
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy
+          rustup default stable
+
+      # Each crate in crates/ is its own Cargo project (no workspace), so list them for the cache.
+      - name: List crates
+        id: crates
+        run: |
+          {
+            echo "workspaces<<EOF"
+            for dir in crates/*/; do echo "${dir%/} -> target"; done
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: ${{ steps.crates.outputs.workspaces }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Clippy and tests, per crate
+        run: |
+          for dir in crates/*/; do
+            echo "::group::${dir%/}"
+            (cd "$dir" && cargo clippy --all-targets -- -D warnings && cargo test)
+            echo "::endgroup::"
+          done
+
+      - name: Rules are valid, their tests pass, generated files are current
+        working-directory: crates/rules-tool
+        run: cargo run -- check
+
+  # Frontend job, disabled: the Android job runs `pnpm build` too (Tauri's beforeBuildCommand),
+  # so frontend errors already fail CI there. Uncomment for a separate, faster frontend check.
+  #
+  # web:
+  #   name: Frontend build
+  #   runs-on: blacksmith-2vcpu-ubuntu-2404
+  #   steps:
+  #     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+  #
+  #     - uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+  #       with:
+  #         install_args: node pnpm
+  #
+  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm build
+
+  android:
+    name: Android debug build
+    # 4 vCPU: compiling the Rust side of the app (Tauri, Turso) dominates this job.
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Java, Node, pnpm and the Android command-line tools, as pinned in mise.toml.
+      - uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+
+      - name: Install Android SDK packages
+        run: mise run android:sdk
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --target aarch64-linux-android
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: src-tauri -> target
+          key: android
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build debug APK (arm64)
+        run: pnpm tauri android build --debug --apk --target aarch64 --ci
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: clean-share-debug-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          retention-days: 7
+          if-no-files-found: error
+
+  # iOS has its own workflow (ios.yml) on GitHub's macOS runners, which are free for public repos.

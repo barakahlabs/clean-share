@@ -203,8 +203,7 @@ fn next_url_start(lower: &str, from: usize) -> Option<usize> {
 /// Length of `url` without sentence punctuation stuck to its end ("see https://a.com/x.").
 fn trim_trailing_punctuation(url: &str) -> usize {
   let mut end = url.len();
-  loop {
-    let Some(last) = url[..end].chars().last() else { break };
+  while let Some(last) = url[..end].chars().last() {
     let unbalanced_paren =
       last == ')' && url[..end].matches('(').count() < url[..end].matches(')').count();
     if matches!(last, '.' | ',' | ';' | ':' | '!' | '?') || unbalanced_paren {
