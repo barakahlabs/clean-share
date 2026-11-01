@@ -7,15 +7,19 @@ class ShareTextArgs: Decodable {
   let text: String
 }
 
-/// Reads text that the app's Share Extension left in the shared App Group.
+/// Reads text that the app's Share Extensions left in the shared App Group.
 ///
-/// The extension can't hand data to the app directly, so it writes to
+/// An extension can't hand data to the app directly, so it writes to
 /// App Group UserDefaults and opens the app. When the app becomes active
 /// with something pending, a `shared` event tells JS to call `get_shared`.
+///
+/// Each extension also writes which share-sheet entry it is ("share" for
+/// Clean & Share, "save" for Save bookmark); older shares without it count as "share".
 class ShareTargetPlugin: Plugin {
-  // Must match the App Group and key used by the Share Extension.
+  // Must match the App Group and keys used by the Share Extensions.
   private let appGroup = "group.com.sirajulm.cleanshare"
   private let sharedTextKey = "sharedText"
+  private let sharedIntentKey = "sharedIntent"
 
   private var becameActiveObserver: NSObjectProtocol?
   private weak var webview: WKWebView?
@@ -71,8 +75,10 @@ class ShareTargetPlugin: Plugin {
       invoke.resolve([:])
       return
     }
+    let intent = defaults?.string(forKey: sharedIntentKey) == "save" ? "save" : "share"
     defaults?.removeObject(forKey: sharedTextKey)
-    invoke.resolve(["text": text])
+    defaults?.removeObject(forKey: sharedIntentKey)
+    invoke.resolve(["text": text, "intent": intent])
   }
 }
 

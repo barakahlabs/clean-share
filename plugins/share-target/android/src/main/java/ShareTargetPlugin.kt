@@ -22,10 +22,20 @@ class ShareTextArgs {
  *
  * The shared text is held until JS reads it with `get_shared`. When a share
  * arrives while the app is running, a `shared` event tells JS to read it.
+ *
+ * Each share-sheet entry is its own component: MainActivity is "Clean & Share",
+ * and an `activity-alias` whose name ends in [SAVE_ALIAS] is "Save bookmark".
+ * The component the share arrived on tells us which one the user picked.
  */
 @TauriPlugin
 class ShareTargetPlugin(private val activity: Activity) : Plugin(activity) {
+    companion object {
+        /** Class-name suffix of the "Save bookmark" activity-alias in AndroidManifest.xml. */
+        const val SAVE_ALIAS = ".SaveBookmark"
+    }
+
     private var pendingText: String? = null
+    private var pendingIntent: String = "share"
 
     // Cold start: the app was launched by the share sheet.
     override fun load(webView: WebView) {
@@ -65,7 +75,10 @@ class ShareTargetPlugin(private val activity: Activity) : Plugin(activity) {
     @Command
     fun getShared(invoke: Invoke) {
         val result = JSObject()
-        result.put("text", pendingText)
+        pendingText?.let {
+            result.put("text", it)
+            result.put("intent", pendingIntent)
+        }
         pendingText = null
         invoke.resolve(result)
     }
@@ -77,6 +90,8 @@ class ShareTargetPlugin(private val activity: Activity) : Plugin(activity) {
         if (text.isNullOrEmpty()) return false
 
         pendingText = text
+        val component = intent.component?.className.orEmpty()
+        pendingIntent = if (component.endsWith(SAVE_ALIAS)) "save" else "share"
         // Mark as handled so the same share isn't delivered again.
         intent.action = null
         return true
