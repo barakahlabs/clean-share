@@ -1,0 +1,84 @@
+.back-button {
+  margin-left: -4px;
+  color: var(--muted);
+}
+
+.tag-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.tag-row {
+  padding: 10px 16px;
+}
+
+.tag-row + .tag-row {
+  border-top: 1px solid var(--border);
+}
+
+.tag-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tag-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tag-count {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tag-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.tag-edit,
+.tag-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--text);
+  background: var(--background);
+}
+
+.tag-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.text-button.danger {
+  color: var(--danger);
+}
+
+.text-button:disabled {
+  opacity: 0.4;
+}
+
+.tags-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--danger);
+}

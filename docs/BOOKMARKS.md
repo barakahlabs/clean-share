@@ -394,13 +394,14 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 
 ### Phase 1 – Save and list (Android + iOS)
 - [x] `Store::save/get/find_by_url/list/delete`, duplicate merge, unit tests.
-- [ ] Run the store on a real iPhone and Android phone (first real check of `turso` on device).
+- [x] Run the store on devices: Android emulator (API 34), iOS simulator, and a real iPhone 13 Pro
+      (save, list, restart). Still to do: a real Android phone.
 - [x] Tauri commands `bookmark_prepare`, `bookmark_save`, `bookmark_list`, `bookmark_get`, `bookmark_delete`
       (`src-tauri/src/bookmarks.rs`; the store lives in a swappable `Library` holder).
 - [x] `tag_list`, `tag_rename`, `tag_delete` commands (for the tag dropdown and Settings → Tags).
-- [ ] Settings → Tags: every tag with how many bookmarks use it (unused tags show 0 and stay
-      until deleted); rename (merges into an existing name); delete, also for tags in use, after a
-      confirm that says how many bookmarks it will be removed from.
+- [x] Settings → Tags: every tag with how many bookmarks use it (unused tags show "Unused" and
+      stay until deleted); rename inline (warns and merges into an existing name); delete, also
+      for tags in use, after an inline confirm that says how many bookmarks it will be removed from.
 - [ ] Android `activity-alias` "Save bookmark"; finish after save.
 - [ ] If Android sharing shortcuts exist by then ([roadmap](ROADMAP.md#share-sheet-position)),
       add "Save bookmark" as one.
