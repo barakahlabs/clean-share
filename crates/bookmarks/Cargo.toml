@@ -1,0 +1,17 @@
+[package]
+name = "bookmarks"
+version = "0.1.0"
+description = "Clean Share bookmarks: storage, tags and search in one database per user"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+link-cleaner = { path = "../link-cleaner" }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+# No mimalloc: a library shouldn't replace the app's allocator.
+turso = { version = "=0.8.3", default-features = false, features = ["fts"] }
+uuid = { version = "1", features = ["v5"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
