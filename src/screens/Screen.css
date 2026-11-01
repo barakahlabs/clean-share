@@ -38,3 +38,17 @@
   color: var(--text);
   cursor: pointer;
 }
+
+.text-button.danger {
+  color: var(--danger);
+}
+
+.text-button:disabled {
+  opacity: 0.4;
+}
+
+/* "‹ Settings", "‹ Bookmarks": back to the screen this one opened from. */
+.back-button {
+  margin-left: -4px;
+  color: var(--muted);
+}
