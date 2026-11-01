@@ -89,6 +89,7 @@ targets:
       groups: [app]
     dependencies:
       - target: ShareExtension
+      - target: SaveExtension
       - framework: libapp.a
         embed: false
       - sdk: CoreGraphics.framework
@@ -106,7 +107,7 @@ targets:
         outputFiles:
           - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
-  # Shows the app in the iOS share sheet. Hands shared text to the app via the App Group;
+  # "Clean Share" in the iOS share sheet. Hands shared text to the app via the App Group;
   # see ShareExtension/ShareViewController.swift and plugins/share-target.
   ShareExtension:
     type: app-extension
@@ -119,6 +120,8 @@ targets:
         CFBundleDisplayName: Clean Share
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
+        # Which share-sheet entry this is; read by ShareViewController.
+        CleanShareIntent: share
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
@@ -134,4 +137,35 @@ targets:
       base:
         PRODUCT_NAME: ShareExtension
         PRODUCT_BUNDLE_IDENTIFIER: com.sirajulm.cleanshare.ShareExtension
+        SWIFT_VERSION: "5.0"
+  # "Save bookmark" in the iOS share sheet: the same code as ShareExtension, but its Info.plist
+  # says CleanShareIntent = save, so the app opens the save sheet directly.
+  SaveExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ShareExtension/ShareViewController.swift
+      - path: SaveExtension
+    info:
+      path: SaveExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Save bookmark
+        CFBundleShortVersionString: 0.1.0
+        CFBundleVersion: "0.1.0"
+        CleanShareIntent: save
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+    entitlements:
+      path: SaveExtension/SaveExtension.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.sirajulm.cleanshare]
+    settings:
+      base:
+        PRODUCT_NAME: SaveExtension
+        PRODUCT_BUNDLE_IDENTIFIER: com.sirajulm.cleanshare.SaveExtension
         SWIFT_VERSION: "5.0"

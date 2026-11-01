@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { onShared } from "./shareTarget";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { onShared, returnToSource } from "./shareTarget";
 import { TabBar, type Tab } from "./components/TabBar";
 import { BookmarksScreen } from "./screens/BookmarksScreen";
 import { SaveBookmarkSheet } from "./screens/SaveBookmarkSheet";
@@ -23,6 +23,8 @@ function App() {
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   // Bumped after a save, so the share screen behind the sheet re-checks the link ("Edit bookmark").
   const [saves, setSaves] = useState(0);
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
 
   useEffect(() => {
     const onBack = (event: PopStateEvent) => {
@@ -61,7 +63,10 @@ function App() {
 
   const closeSave = useCallback((saved: boolean) => {
     if (saved) setSaves((n) => n + 1);
+    // Straight from another app's "Save bookmark": go back to that app (Android).
+    const fromSaveShare = overlayRef.current?.share === false;
     history.back();
+    if (fromSaveShare) returnToSource().catch(console.error);
   }, []);
 
   const base =
