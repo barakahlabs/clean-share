@@ -43,10 +43,44 @@ pub struct Analysis {
   pub tracking_count: usize,
 }
 
+/// A link found in shared text, as shared and after cleaning.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Link {
+  pub original: String,
+  pub cleaned: String,
+  /// Id of the provider whose domains cover this link (e.g. `youtube`), if any.
+  pub provider: Option<String>,
+}
+
 /// Analyzes `text` with the bundled rules.
 #[cfg(feature = "bundled")]
 pub fn analyze(text: &str) -> Analysis {
   analyze_with(bundled_rules(), text)
+}
+
+/// The links in `text`, in order, cleaned with the bundled rules.
+#[cfg(feature = "bundled")]
+pub fn links(text: &str) -> Vec<Link> {
+  links_with(bundled_rules(), text)
+}
+
+pub fn links_with(rules: &RuleSet, text: &str) -> Vec<Link> {
+  find_urls(text)
+    .into_iter()
+    .map(|range| {
+      let original = &text[range];
+      Link {
+        original: original.to_string(),
+        cleaned: clean_url(rules, original).cleaned,
+        provider: provider_for(rules, &host_of(original)).map(|p| p.id.as_str().to_string()),
+      }
+    })
+    .collect()
+}
+
+fn provider_for<'a>(rules: &'a RuleSet, host: &str) -> Option<&'a link_rules::Provider> {
+  rules.providers.iter().find(|p| p.domains.iter().any(|d| d.matches(host)))
 }
 
 pub fn analyze_with(rules: &RuleSet, text: &str) -> Analysis {
@@ -116,12 +150,7 @@ fn clean_url(rules: &RuleSet, url: &str) -> CleanedUrl {
 
 /// True if query parameter `name` is tracking for a link on `host` at `path`.
 pub fn is_tracking(rules: &RuleSet, host: &str, path: &str, name: &str) -> bool {
-  let provider = rules
-    .providers
-    .iter()
-    .find(|p| p.domains.iter().any(|d| d.matches(host)));
-
-  if let Some(provider) = provider {
+  if let Some(provider) = provider_for(rules, host) {
     if provider.keep.iter().any(|k| k.matches(name)) {
       return false;
     }
@@ -319,6 +348,27 @@ mod tests {
     let joined: String = analyze(text).segments.iter().map(|s| s.text.as_str()).collect();
     assert_eq!(joined, text);
     assert_eq!(highlighted(text), ["?utm_source=a", "&fbclid=b"]);
+  }
+
+  #[test]
+  fn links_lists_each_link_with_its_provider() {
+    let found = links("Watch https://youtu.be/x?si=abc then read https://example.com/a?utm_source=b.");
+    assert_eq!(
+      found,
+      [
+        Link {
+          original: "https://youtu.be/x?si=abc".into(),
+          cleaned: "https://youtu.be/x".into(),
+          provider: Some("youtube".into()),
+        },
+        Link {
+          original: "https://example.com/a?utm_source=b".into(),
+          cleaned: "https://example.com/a".into(),
+          provider: None,
+        },
+      ]
+    );
+    assert!(links("no links here").is_empty());
   }
 
   #[test]

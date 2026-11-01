@@ -96,6 +96,26 @@ in priority order within each section.
 - [ ] Clipboard cleaning on app open ("Your clipboard has a tracked link, clean it?").
 - [ ] Settings: remove affiliate tags, quick mode, rules revision / last update.
 - [ ] Optional local-only history of cleaned links (off by default, never leaves the device).
+- [ ] Get to the front of the share sheet (see [Share sheet position](#share-sheet-position)).
+
+### Share sheet position
+
+Neither platform lets an app set its own position: both order the share sheet by how often and
+how recently each target is used. What we can do:
+
+| Platform | What | When |
+|---|---|---|
+| Android | **Sharing shortcuts** (Direct Share): publish "Clean & Share" as a share-target shortcut, and "Save bookmark" once bookmarks exist. Needs `res/xml/shortcuts.xml` with `<share-target>` and `ShortcutManagerCompat.pushDynamicShortcut` in `plugins/share-target`. Shortcuts can show in the top row of the share sheet, above the app list; the system still ranks them by use | Next |
+| Android | **Pin tip**: many Android versions and skins (e.g. Samsung) let users long-press a target and pin it. Varies by version and maker, so verify on real devices before writing the steps | Next |
+| iOS | **Favorites tip**: in the share sheet's app row, More → Edit → add Clean Share to Favorites and drag it first. Favorites stay in front | Next |
+| iOS | **Action extension** "Clean link": a second entry in the action list (below the app row), which users can also move to the top | Later |
+| Both | Not possible: `android:priority` on intent filters doesn't change share sheet order; the iOS top row of people/conversations is for messaging apps | – |
+
+The tip is a one-time card after the first successful share ("Put Clean Share first"), with the
+steps for the current platform, and can be reopened from Settings. Check the Android steps on a
+Pixel and a Samsung before writing them.
+
+Open question: is an iOS Action extension worth a second entry next to the Share Extension?
 
 ### Bookmarks
 
