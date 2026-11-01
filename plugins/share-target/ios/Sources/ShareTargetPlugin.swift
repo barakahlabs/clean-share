@@ -70,6 +70,11 @@ class ShareTargetPlugin: Plugin {
     }
   }
 
+  /// iOS has no API to go back to the app that shared; the user switches back themselves.
+  @objc public func returnToSource(_ invoke: Invoke) {
+    invoke.resolve(["returned": false])
+  }
+
   @objc public func getShared(_ invoke: Invoke) {
     guard let text = defaults?.string(forKey: sharedTextKey) else {
       invoke.resolve([:])

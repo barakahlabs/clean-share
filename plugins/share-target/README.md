@@ -23,6 +23,7 @@ that each Share Extension writes. Anything else counts as `"share"`.
 invoke("plugin:share-target|get_shared")          // { text?: string, intent?: "share" | "save" }, clears it
 addPluginListener("share-target", "shared", ...)  // fired when a new share arrives
 invoke("plugin:share-target|share_text", { text }) // opens the share sheet
+invoke("plugin:share-target|return_to_source")    // back to the sharing app (Android); false on iOS
 ```
 
 See `src/shareTarget.ts` in the app for a wrapper.

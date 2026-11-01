@@ -32,6 +32,21 @@
             <!-- SHARE TARGET PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
         </activity>
 
+        <!-- "Save bookmark" in the share sheet: the same activity under a second name. The
+             share-target plugin sees the alias name (ending in .SaveBookmark) and reports the
+             share as intent "save", which opens the save sheet directly. -->
+        <activity-alias
+            android:name=".SaveBookmark"
+            android:targetActivity=".MainActivity"
+            android:label="@string/save_bookmark_title"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
+
         <provider
           android:name="androidx.core.content.FileProvider"
           android:authorities="${applicationId}.fileprovider"

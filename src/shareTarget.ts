@@ -44,6 +44,14 @@ export function onShared(onShare: (shared: Shared) => void): () => void {
   };
 }
 
+/**
+ * Goes back to the app that shared (Android). Resolves false where that isn't possible (iOS):
+ * the user switches back themselves.
+ */
+export function returnToSource(): Promise<boolean> {
+  return invoke("plugin:share-target|return_to_source");
+}
+
 /** Opens the system share sheet so the user can send `text` to another app. */
 export function shareText(text: string): Promise<void> {
   return invoke("plugin:share-target|share_text", { text });
