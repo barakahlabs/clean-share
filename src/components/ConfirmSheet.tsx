@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { BottomSheet } from "./BottomSheet";
 import "./ConfirmSheet.css";
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
  * A bottom sheet that asks to confirm an action. Built in the page (not `window.confirm`, which
  * Android's WebView doesn't reliably show), so it looks the same on both platforms.
  * Cancel, a tap on the dimmed background, Escape, or Android's back button all cancel.
+ * Built on BottomSheet; this adds the history entry and the two buttons.
  *
  * Mount it only while it's open: it adds a history entry so the back button closes it.
  */
@@ -27,13 +29,8 @@ export function ConfirmSheet({ title, detail, confirmLabel, destructive, onConfi
   useEffect(() => {
     history.pushState({ sheet: true }, "");
     const onPop = () => (confirmed.current ? handlers.current.onConfirm() : handlers.current.onCancel());
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && history.back();
     window.addEventListener("popstate", onPop);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("popstate", onPop);
-      window.removeEventListener("keydown", onKey);
-    };
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   // Every way out goes through history.back(), so the sheet's history entry is always removed.
@@ -43,29 +40,21 @@ export function ConfirmSheet({ title, detail, confirmLabel, destructive, onConfi
   };
 
   return (
-    <div className="sheet-backdrop" onClick={() => close(false)}>
-      <div
-        className="sheet"
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="sheet-title"
-        onClick={(event) => event.stopPropagation()}
+    <BottomSheet role="alertdialog" labelledBy="confirm-sheet-title" onClose={() => close(false)}>
+      <h2 id="confirm-sheet-title" className="sheet-title">
+        {title}
+      </h2>
+      {detail && <p className="sheet-detail">{detail}</p>}
+      <button
+        type="button"
+        className={destructive ? "sheet-button destructive" : "sheet-button"}
+        onClick={() => close(true)}
       >
-        <h2 id="sheet-title" className="sheet-title">
-          {title}
-        </h2>
-        {detail && <p className="sheet-detail">{detail}</p>}
-        <button
-          type="button"
-          className={destructive ? "sheet-button destructive" : "sheet-button"}
-          onClick={() => close(true)}
-        >
-          {confirmLabel}
-        </button>
-        <button type="button" className="sheet-button" onClick={() => close(false)} autoFocus>
-          Cancel
-        </button>
-      </div>
-    </div>
+        {confirmLabel}
+      </button>
+      <button type="button" className="sheet-button" onClick={() => close(false)} autoFocus>
+        Cancel
+      </button>
+    </BottomSheet>
   );
 }

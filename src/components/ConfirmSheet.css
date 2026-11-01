@@ -1,34 +1,3 @@
-.sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
-  animation: sheet-fade 150ms ease-out;
-}
-
-.sheet {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px);
-  border-radius: 16px 16px 0 0;
-  background: var(--surface);
-  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.18);
-  animation: sheet-up 180ms ease-out;
-}
-
-.sheet-title {
-  margin: 0;
-  font-size: 1.1rem;
-  overflow-wrap: anywhere;
-}
-
 .sheet-detail {
   margin: 0 0 6px;
   color: var(--muted);
@@ -55,23 +24,4 @@
 
 .sheet-button:active {
   opacity: 0.8;
-}
-
-@keyframes sheet-up {
-  from {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes sheet-fade {
-  from {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sheet,
-  .sheet-backdrop {
-    animation: none;
-  }
 }
