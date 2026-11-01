@@ -45,8 +45,7 @@
   font-size: 0.9rem;
 }
 
-.tag-edit,
-.tag-confirm {
+.tag-edit {
   display: flex;
   flex-direction: column;
   gap: 8px;

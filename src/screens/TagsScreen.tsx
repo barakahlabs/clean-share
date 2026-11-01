@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { deleteTag, listTags, renameTag, type TagCount } from "../bookmarks";
+import { ConfirmSheet } from "../components/ConfirmSheet";
 import "./Screen.css";
 import "./TagsScreen.css";
 
-/** What a row is doing: showing its actions, being renamed, or asking to confirm a delete. */
-type Mode = { kind: "idle" } | { kind: "rename"; name: string; draft: string } | { kind: "delete"; name: string };
+/** What a row is doing: showing its actions, or being renamed. */
+type Mode = { kind: "idle" } | { kind: "rename"; name: string; draft: string };
 
 /**
  * Settings → Tags: every tag with how many bookmarks use it. Unused tags (0) stay until deleted
- * here. Rename merges into an existing tag of that name; delete removes the tag from every
- * bookmark that has it, after a confirm that says how many.
+ * here. Rename (inline) merges into an existing tag of that name; delete removes the tag from
+ * every bookmark that has it, after a bottom-sheet confirm that says how many.
  */
 export function TagsScreen({ onBack }: { onBack: () => void }) {
   const [tags, setTags] = useState<TagCount[] | null>(null);
   const [mode, setMode] = useState<Mode>({ kind: "idle" });
+  const [deleting, setDeleting] = useState<TagCount | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -91,27 +93,6 @@ export function TagsScreen({ onBack }: { onBack: () => void }) {
                     </button>
                   </div>
                 </form>
-              ) : mode.kind === "delete" && mode.name === tag.name ? (
-                <div className="tag-confirm">
-                  <p className="tag-note">
-                    {tag.count === 0
-                      ? `Delete "${tag.name}"? No bookmarks use it.`
-                      : `Remove "${tag.name}" from ${bookmarkCount(tag.count)} and delete it?`}
-                  </p>
-                  <div className="tag-actions">
-                    <button type="button" className="text-button" onClick={() => setMode({ kind: "idle" })}>
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="text-button danger"
-                      disabled={busy}
-                      onClick={() => run(deleteTag(tag.name))}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
               ) : (
                 <div className="tag-line">
                   <span className="tag-name">{tag.name}</span>
@@ -127,7 +108,7 @@ export function TagsScreen({ onBack }: { onBack: () => void }) {
                     <button
                       type="button"
                       className="text-button danger"
-                      onClick={() => setMode({ kind: "delete", name: tag.name })}
+                      onClick={() => setDeleting(tag)}
                     >
                       Delete
                     </button>
@@ -137,6 +118,25 @@ export function TagsScreen({ onBack }: { onBack: () => void }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {deleting && (
+        <ConfirmSheet
+          title={`Delete "${deleting.name}"?`}
+          detail={
+            deleting.count === 0
+              ? "No bookmarks use it."
+              : `It will be removed from ${bookmarkCount(deleting.count)}.`
+          }
+          confirmLabel="Delete tag"
+          destructive
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => {
+            const name = deleting.name;
+            setDeleting(null);
+            run(deleteTag(name));
+          }}
+        />
       )}
     </main>
   );
