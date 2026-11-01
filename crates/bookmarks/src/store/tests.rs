@@ -132,14 +132,18 @@ async fn update_changes_and_clears_fields() {
 }
 
 #[tokio::test]
-async fn delete_removes_the_bookmark_and_unused_tags() {
+async fn delete_removes_the_bookmark_but_keeps_its_tags() {
   let mut store = store().await;
   let a = store.save(new("https://example.com/a", &["keep", "only-a"])).await.unwrap().bookmark;
   store.save(new("https://example.com/b", &["keep"])).await.unwrap();
 
   store.delete(&a.id).await.unwrap();
   assert_eq!(store.get(&a.id).await.unwrap(), None);
-  assert_eq!(store.tags().await.unwrap(), [TagCount { name: "keep".into(), count: 1 }]);
+  // "only-a" has no bookmarks left but stays, with a count of 0, until the user deletes it.
+  assert_eq!(
+    store.tags().await.unwrap(),
+    [TagCount { name: "keep".into(), count: 1 }, TagCount { name: "only-a".into(), count: 0 }]
+  );
   assert!(matches!(store.delete(&a.id).await, Err(Error::NotFound)));
 }
 
@@ -169,9 +173,9 @@ async fn set_tags_replaces_and_keeps_the_source() {
     tags.iter().map(|t| (t.name.as_str(), t.source)).collect::<Vec<_>>(),
     [("ai-pick", TagSource::Ai), ("new", TagSource::User)]
   );
-  // "old" is no longer used anywhere, so it's gone.
-  let names: Vec<_> = store.tags().await.unwrap().into_iter().map(|t| t.name).collect();
-  assert_eq!(names, ["ai-pick", "new"]);
+  // "old" is no longer used, but stays (count 0) so it can still be picked or deleted.
+  let counts: Vec<_> = store.tags().await.unwrap().into_iter().map(|t| (t.name, t.count)).collect();
+  assert_eq!(counts, [("ai-pick".into(), 1), ("new".into(), 1), ("old".to_string(), 0)]);
 }
 
 #[tokio::test]
@@ -206,11 +210,15 @@ async fn rename_tag_merges_into_an_existing_one() {
 }
 
 #[tokio::test]
+/// Deleting a tag that's in use removes it from every bookmark that has it.
 async fn delete_tag_removes_it_everywhere() {
   let mut store = store().await;
   let a = store.save(new("https://example.com/a", &["temp", "keep"])).await.unwrap().bookmark;
+  let b = store.save(new("https://example.com/b", &["temp"])).await.unwrap().bookmark;
   store.delete_tag("TEMP").await.unwrap();
   assert_eq!(tag_names(&store.get(&a.id).await.unwrap().unwrap()), ["keep"]);
+  assert!(tag_names(&store.get(&b.id).await.unwrap().unwrap()).is_empty());
+  assert_eq!(store.tags().await.unwrap(), [TagCount { name: "keep".into(), count: 1 }]);
   assert!(search(&store, "temp").await.is_empty());
 }
 
