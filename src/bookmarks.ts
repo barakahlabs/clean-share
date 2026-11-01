@@ -6,6 +6,8 @@ import { invoke } from "@tauri-apps/api/core";
 export type TagSource = "user" | "suggested" | "ai";
 export type BookmarkTag = { name: string; source: TagSource };
 export type TagInput = { name: string; source?: TagSource };
+/** A tag and how many bookmarks use it (0 for tags no bookmark uses any more). */
+export type TagCount = { name: string; count: number };
 
 export type Bookmark = {
   id: string;
@@ -74,4 +76,19 @@ export function getBookmark(id: string): Promise<Bookmark | null> {
 
 export function deleteBookmark(id: string): Promise<void> {
   return invoke("bookmark_delete", { id });
+}
+
+/** Every tag with its bookmark count, most used first. */
+export function listTags(): Promise<TagCount[]> {
+  return invoke("tag_list");
+}
+
+/** Renames a tag; if a tag named `to` exists, the two are merged. */
+export function renameTag(from: string, to: string): Promise<void> {
+  return invoke("tag_rename", { from, to });
+}
+
+/** Deletes a tag, removing it from every bookmark that has it. */
+export function deleteTag(name: string): Promise<void> {
+  return invoke("tag_delete", { name });
 }

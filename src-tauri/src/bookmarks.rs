@@ -2,7 +2,9 @@
 
 use std::path::PathBuf;
 
-use ::bookmarks::{Bookmark, ListQuery, NewBookmark, Page, Prepared, Saved, Store, db::Location};
+use ::bookmarks::{
+    Bookmark, ListQuery, NewBookmark, Page, Prepared, Saved, Store, TagCount, db::Location,
+};
 use serde::{Serialize, Serializer};
 use tauri::{AppHandle, Manager, State, async_runtime::Mutex};
 
@@ -121,4 +123,26 @@ pub async fn bookmark_get(
 #[tauri::command]
 pub async fn bookmark_delete(library: State<'_, Library>, id: String) -> CommandResult<()> {
     with_store!(library, |store| store.delete(&id))
+}
+
+/// Every tag with how many bookmarks use it (0 for unused tags), most used first.
+#[tauri::command]
+pub async fn tag_list(library: State<'_, Library>) -> CommandResult<Vec<TagCount>> {
+    with_store!(library, |store| store.tags())
+}
+
+/// Renames a tag; if a tag named `to` exists, the two are merged.
+#[tauri::command]
+pub async fn tag_rename(
+    library: State<'_, Library>,
+    from: String,
+    to: String,
+) -> CommandResult<()> {
+    with_store!(library, |store| store.rename_tag(&from, &to))
+}
+
+/// Deletes a tag, removing it from every bookmark that has it.
+#[tauri::command]
+pub async fn tag_delete(library: State<'_, Library>, name: String) -> CommandResult<()> {
+    with_store!(library, |store| store.delete_tag(&name))
 }
