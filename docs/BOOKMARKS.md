@@ -408,8 +408,11 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 - [ ] iOS `SaveExtension` target in `project.yml`, App Group handoff, `cleanshare://save`.
 - [x] Interim: "Save bookmark" button on the share screen, and the Bookmarks tab lists saved
       bookmarks (tap opens the cleaned link).
-- [ ] Save screen (title, manual tags with a dropdown of existing tags, note), detail screen
-      (open, share, delete).
+- [x] Save screen: cleaned link, title (suggested from the shared text), tags (chips; dropdown of
+      existing tags, most used first, filtered as you type; "Add 'xyz'" for new ones), note. Opens
+      from the share screen's Save button, or directly for a "save" share. If the link is already
+      saved, the same screen edits it (`bookmark_update`, `bookmark_set_tags`).
+- [ ] Detail screen (open, share, edit, delete with the confirm sheet).
 - **Done when:** a YouTube, Instagram and X link can be saved from each app on both phones, appear
   cleaned in the list, and saving the same link twice shows the existing bookmark.
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { shareText } from "../shareTarget";
 import { cleanText, type Analysis } from "../linkCleaner";
-import { prepareBookmark, saveBookmark } from "../bookmarks";
+import { prepareBookmark } from "../bookmarks";
 import shareIcon from "../assets/share.svg";
 import "./Screen.css";
 import "./SharedTextScreen.css";
@@ -9,16 +9,22 @@ import "./SharedTextScreen.css";
 /**
  * - `none`: no link in the shared text, so nothing to save
  * - `ready`: a link that isn't saved yet
- * - `saved`: saved now, or it already was
+ * - `saved`: the link is already saved (the button edits it)
  */
-type SaveState = "checking" | "none" | "ready" | "saving" | "saved" | "error";
+type SaveState = "checking" | "none" | "ready" | "saved" | "error";
+
+type Props = {
+  text: string;
+  onClose: () => void;
+  /** Opens the save screen for this text (title, tags, note). */
+  onSave: () => void;
+};
 
 /**
- * Shows text shared from another app with its tracking highlighted, and shares it cleaned or
- * saves it as a bookmark. (Until the separate "Save bookmark" share entry exists, saving
- * happens here.)
+ * Shows text shared from another app with its tracking highlighted, and shares it cleaned.
+ * "Save bookmark" opens the save screen; once the link is saved the button edits it instead.
  */
-export function SharedTextScreen({ text, onClose }: { text: string; onClose: () => void }) {
+export function SharedTextScreen({ text, onClose, onSave }: Props) {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [save, setSave] = useState<SaveState>("checking");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -46,16 +52,6 @@ export function SharedTextScreen({ text, onClose }: { text: string; onClose: () 
       current = false;
     };
   }, [text]);
-
-  const saveLink = () => {
-    setSave("saving");
-    saveBookmark({ sharedText: text })
-      .then(() => setSave("saved"))
-      .catch((error) => {
-        setSave("error");
-        setSaveError(String(error));
-      });
-  };
 
   return (
     <main className="screen">
@@ -96,10 +92,10 @@ export function SharedTextScreen({ text, onClose }: { text: string; onClose: () 
           <button
             type="button"
             className="share-button secondary"
-            disabled={save !== "ready"}
-            onClick={saveLink}
+            disabled={save !== "ready" && save !== "saved"}
+            onClick={onSave}
           >
-            {save === "saved" ? "Saved" : save === "saving" ? "Saving…" : "Save bookmark"}
+            {save === "saved" ? "Edit bookmark" : "Save bookmark"}
           </button>
         )}
         <button

@@ -104,6 +104,9 @@ async fn prepare_reports_links_and_an_existing_bookmark() {
   assert_eq!(fresh.links.len(), 2);
   assert_eq!(fresh.links[0].cleaned, "https://youtu.be/a");
   assert!(fresh.existing.is_none());
+  // The suggested title is the text around the first link, as `save` would use it.
+  assert_eq!(fresh.title.as_deref(), Some("see and"));
+  assert_eq!(store.prepare("https://youtu.be/a").await.unwrap().title, None);
 
   store.save(new("https://youtu.be/a", &[])).await.unwrap();
   let again = store.prepare("https://youtu.be/a?si=2").await.unwrap();
@@ -403,14 +406,11 @@ async fn refuses_a_database_from_a_newer_app() {
 }
 
 #[test]
-fn titles_come_from_the_text_around_the_link() {
-  assert_eq!(
-    title_from("Great talk - https://a.com/x", "https://a.com/x").as_deref(),
-    Some("Great talk")
-  );
-  assert_eq!(title_from("https://a.com/x", "https://a.com/x"), None);
-  assert_eq!(
-    title_from("Look:\nhttps://a.com/x\n  so good", "https://a.com/x").as_deref(),
-    Some("Look: so good")
-  );
+fn titles_come_from_the_text_around_the_links() {
+  let title = |text: &str| title_from(text, &BundledRules.links(text));
+  assert_eq!(title("Great talk - https://a.com/x").as_deref(), Some("Great talk"));
+  assert_eq!(title("https://a.com/x"), None);
+  assert_eq!(title("Look:\nhttps://a.com/x\n  so good").as_deref(), Some("Look: so good"));
+  // Every link is left out, not just the first.
+  assert_eq!(title("see https://a.com/x and https://b.com/y").as_deref(), Some("see and"));
 }
