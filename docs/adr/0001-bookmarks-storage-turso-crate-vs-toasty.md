@@ -39,7 +39,7 @@ Versions compared: `turso` **0.8.3** (12 Oct 2026) and `toasty` / `toasty-driver
 | **Mapping rows to structs** | By hand (`store/row.rs`, ~90 lines) | Automatic for model queries | Some. Small saving at our size (~15 queries) |
 | **Full-text search queries** | `fts_match` / `fts_score` in SQL, with our workarounds | Not in the query builder; only via raw SQL (`toasty::sql::query`) | **Yes.** Our main query stays raw SQL either way |
 | **Raw SQL results** | Rows read into our structs | "Toasty does not … hydrate models from raw query results"; returns dynamic `Value` records | **Yes.** Search results would still be mapped by hand |
-| **Schema definition** | Hand-written DDL in `migrate.rs` | Generated from models (`push_schema`, generated migration SQL) | Some. See the next three rows |
+| **Schema definition** | Hand-written DDL in `migrations/*.sql`, compiled in | Generated from models (`push_schema`, generated migration SQL) | Some. See the next three rows |
 | **`STRICT` tables, `COLLATE NOCASE`, `ON DELETE CASCADE`** | Written directly in the DDL | No sign of them in the 0.11.0 source; only possible by hand-editing migration SQL | **Yes.** Our tag and delete rules depend on them |
 | **Search index DDL (`USING fts … WITH (tokenizer = 'ngram')`)** | Written directly in the DDL | No model attribute; hand-editing migration SQL needed | **Yes** |
 | **Migration tracking** | `PRAGMA user_version` | `__toasty_migrations` table (id, name, applied time) | No. Either works |
