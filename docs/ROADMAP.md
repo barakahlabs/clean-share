@@ -29,14 +29,17 @@ in priority order within each section.
   - Android debug APK (arm64), uploaded as an artifact for 7 days
   - Tool versions come from `mise.toml`; Android SDK packages from `mise run android:sdk`
   - Caches (Rust, Gradle) are saved from `main` only, so PRs read them but don't fill the cache
-- [x] iOS in CI, manual only: Actions → CI → Run workflow → tick **ios**. One Blacksmith macOS
-      minute uses 20 of the org's 3,000 free monthly minutes, so it never runs on its own.
-  - Linux builds the frontend (`dist/`) and passes it on; the Mac (`blacksmith-6vcpu-macos-latest`)
-    only compiles the iOS Rust code and the app: `pnpm tauri ios build --debug --target
-    aarch64-sim` with the frontend step skipped.
+- [x] iOS simulator build in CI (`.github/workflows/ios.yml`), on GitHub's `macos-latest`, which
+      is free for public repos (M1, 3 cores; slower than Blacksmith's $0.08/min M4). Runs on PRs
+      that touch `src-tauri/gen/apple/`, `src-tauri/tauri.ios.conf.json` or
+      `plugins/share-target/{ios,src}/`, and by hand (Actions → iOS → Run workflow).
+  - Linux builds the frontend (`dist/`) and passes it on; the Mac only compiles the iOS Rust code
+    and the app: `pnpm tauri ios build --debug --target aarch64-sim` with the frontend step
+    skipped.
   - Simulator builds are signed ad hoc ("Sign to Run Locally"), so no certificate or Apple account
     is needed. The `.app` is kept as an artifact for 7 days.
-  - Checked locally (Xcode 26.6); not yet run on a Blacksmith Mac.
+  - If the repo goes private, macOS minutes cost money on GitHub too: make it manual-only or move
+    it to Blacksmith (`blacksmith-6vcpu-macos-latest`).
 - [ ] iOS device/release builds in CI (signing certificates and profiles as secrets). Until then,
       build releases on the Mac.
 - [ ] `plugins/share-target`: no Rust tests yet; it's compiled by the Android job. Testing it on
