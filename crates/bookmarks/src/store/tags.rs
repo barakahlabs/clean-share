@@ -1,5 +1,8 @@
 //! Tags. A tag's ID is derived from its lowercased name, so every device agrees on it; renaming
 //! a tag therefore moves its bookmarks to the tag with the new name (merging if it exists).
+//!
+//! Tags stay when no bookmark uses them any more (count 0): the user decides what to delete,
+//! seeing how many bookmarks each tag has.
 
 use std::collections::HashMap;
 
@@ -31,7 +34,6 @@ impl Store {
     }
     tx.execute("DELETE FROM bookmark_tag WHERE bookmark_id = ?1", [bookmark_id]).await?;
     add(&tx, bookmark_id, tags, now).await?;
-    remove_unused(&tx).await?;
     tx.commit().await?;
     Ok(of(&self.conn, &[bookmark_id.to_string()]).await?.remove(bookmark_id).unwrap_or_default())
   }
@@ -204,10 +206,4 @@ async fn bookmarks_with(conn: &Connection, tag_id: &str) -> Result<Vec<String>> 
     ids.push(row::text(&r, 0, "bookmark_id")?);
   }
   Ok(ids)
-}
-
-/// Drops tags no bookmark uses any more, so autocomplete doesn't offer them.
-pub(super) async fn remove_unused(conn: &Connection) -> Result<()> {
-  conn.execute("DELETE FROM tag WHERE id NOT IN (SELECT tag_id FROM bookmark_tag)", ()).await?;
-  Ok(())
 }

@@ -185,7 +185,7 @@ setting               not yet: added by a migration when the first synced prefer
 
 - **Thumbnails** (phase 3) are files named after the bookmark ID in the app data dir, not a column.
 - **Tags:** names are trimmed, a leading `#` is dropped, and inner spaces collapse (`" #Rust  lang"`
-  → `Rust lang`). Unused tags are removed when their last bookmark lets go of them. Renaming moves
+  → `Rust lang`). Tags stay when no bookmark uses them any more (count 0); Settings → Tags lists every tag with its count, so the user decides what to delete. Renaming moves
   bookmarks to the tag with the new name (merging if it exists), because the ID follows the name.
 - **Search:** every word of at least two letters must match somewhere (`rust talk` = rust AND
   talk), case-insensitive, also inside words (`ru` finds "Rust", and also "Trusted"). Results are
@@ -356,7 +356,8 @@ leaving the screen.
 - **BookmarksScreen**: search field, tag filter chips, list (infinite scroll), empty state that
   explains how to save from the share sheet.
 - **BookmarkDetailScreen**: card, open/share/edit/delete, tags, later preview + embed.
-- **TagsScreen** (phase 6): list with counts, rename/merge/delete.
+- **TagsScreen** (Settings → Tags, phase 1): every tag with its bookmark count (unused tags show 0
+  and stay), rename/merge, delete (also in use: removes it from those bookmarks, after a confirm).
 - **SettingsScreen**: previews toggle, AI options, export/import, rules revision.
 
 ## Phases
@@ -428,7 +429,8 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 - [ ] `embed_kind` / `embed_url` from providers; "Show embed" for YouTube and X; sandboxed iframe.
 
 ### Phase 6 – Organize
-- [ ] Edit screen; tag rename/merge/delete; `reclean_all` on rules updates with a report.
+- [ ] Edit screen; `reclean_all` on rules updates with a report. (Tag management moved to
+      phase 1: Settings → Tags.)
 
 ### Phase 7 – Import / export
 - [ ] Export JSON (full) and Netscape HTML; import browser HTML, Pocket and Raindrop exports (cleaned).
