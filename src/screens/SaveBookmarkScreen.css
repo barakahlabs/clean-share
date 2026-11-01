@@ -1,0 +1,70 @@
+.save-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.save-link {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.save-hint {
+  margin: -8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.save-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.save-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.save-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.save-note {
+  resize: vertical;
+}
+
+.save-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.save-button {
+  margin-top: 8px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--background);
+  background: var(--text);
+  cursor: pointer;
+}
+
+.save-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

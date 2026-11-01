@@ -2,41 +2,59 @@ import { useCallback, useEffect, useState } from "react";
 import { onShared } from "./shareTarget";
 import { TabBar, type Tab } from "./components/TabBar";
 import { BookmarksScreen } from "./screens/BookmarksScreen";
+import { SaveBookmarkScreen } from "./screens/SaveBookmarkScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { SharedTextScreen } from "./screens/SharedTextScreen";
 import "./App.css";
 
+/** What another app shared, and which screen it's open on. */
+type Overlay = { text: string; page: "share" | "save" };
+
 /**
- * App shell: bottom tabs, with the share screen opening on top whenever another app shares
- * something. Closing it (Done, or Android's back button) returns to the tab the user was on.
+ * App shell: bottom tabs, with screens for a share opening on top of them. A "Clean & Share"
+ * share opens the share screen (which can go on to the save screen); a "Save bookmark" share
+ * opens the save screen directly. Each open screen has a history entry, so Android's back
+ * button steps back through them to the tab the user was on.
  */
 function App() {
   const [tab, setTab] = useState<Tab>("bookmarks");
-  const [sharedText, setSharedText] = useState<string | null>(null);
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
 
-  // A history entry per open share screen, so Android's back button closes it.
   useEffect(() => {
-    const onBack = () => setSharedText(null);
+    const onBack = (event: PopStateEvent) => {
+      const page = event.state?.overlay;
+      setOverlay((open) => (open && (page === "share" || page === "save") ? { ...open, page } : null));
+    };
     window.addEventListener("popstate", onBack);
     return () => window.removeEventListener("popstate", onBack);
   }, []);
 
   useEffect(
     () =>
-      // "save" shares get their own screen in phase 1; until then both open the share screen.
-      onShared(({ text }) => {
-        setSharedText((open) => {
-          if (open === null) history.pushState({ shareScreen: true }, "");
-          return text;
+      onShared(({ text, intent }) => {
+        const page = intent === "save" ? "save" : "share";
+        setOverlay((open) => {
+          // A new share replaces whatever share screen is open.
+          if (open === null) history.pushState({ overlay: page }, "");
+          else history.replaceState({ overlay: page }, "");
+          return { text, page };
         });
       }),
     [],
   );
 
-  const closeShared = useCallback(() => history.back(), []);
+  const back = useCallback(() => history.back(), []);
 
-  if (sharedText !== null) {
-    return <SharedTextScreen text={sharedText} onClose={closeShared} />;
+  const openSave = useCallback(() => {
+    history.pushState({ overlay: "save" }, "");
+    setOverlay((open) => open && { ...open, page: "save" });
+  }, []);
+
+  if (overlay?.page === "share") {
+    return <SharedTextScreen text={overlay.text} onClose={back} onSave={openSave} />;
+  }
+  if (overlay?.page === "save") {
+    return <SaveBookmarkScreen text={overlay.text} onDone={back} />;
   }
 
   return (
