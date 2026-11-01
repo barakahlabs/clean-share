@@ -20,11 +20,27 @@ in priority order within each section.
 - [ ] Commit pending work: ClearURLs reference in `rules/README.md` (→ `rules-schema`), share icon
       and button restyle (→ new `share-icon` branch).
 - [ ] Push the stacked branches and open linked PRs (`but pr new <top-branch> -t`).
-- [ ] CI (GitHub Actions) on every PR:
-  - `cargo test` for `crates/*` and `plugins/share-target`
+- [x] CI (GitHub Actions on [Blacksmith](https://docs.blacksmith.sh) runners,
+      `.github/workflows/ci.yml`) on every PR and push to `main`, skipping docs-only changes:
+  - Rust: `cargo clippy -D warnings` + `cargo test` for each crate in `crates/`
   - `cargo run -- check` in `crates/rules-tool` (rules valid, tests pass, generated files current)
-  - `pnpm build` (TypeScript + Vite)
-  - Android debug build; iOS build on a macOS runner
+  - `pnpm build` (TypeScript + Vite), as part of the Android build (the separate `web` job is
+    disabled)
+  - Android debug APK (arm64), uploaded as an artifact for 7 days
+  - Tool versions come from `mise.toml`; Android SDK packages from `mise run android:sdk`
+  - Caches (Rust, Gradle) are saved from `main` only, so PRs read them but don't fill the cache
+- [x] iOS in CI, manual only: Actions → CI → Run workflow → tick **ios**. One Blacksmith macOS
+      minute uses 20 of the org's 3,000 free monthly minutes, so it never runs on its own.
+  - Linux builds the frontend (`dist/`) and passes it on; the Mac (`blacksmith-6vcpu-macos-latest`)
+    only compiles the iOS Rust code and the app: `pnpm tauri ios build --debug --target
+    aarch64-sim` with the frontend step skipped.
+  - Simulator builds are signed ad hoc ("Sign to Run Locally"), so no certificate or Apple account
+    is needed. The `.app` is kept as an artifact for 7 days.
+  - Checked locally (Xcode 26.6); not yet run on a Blacksmith Mac.
+- [ ] iOS device/release builds in CI (signing certificates and profiles as secrets). Until then,
+      build releases on the Mac.
+- [ ] `plugins/share-target`: no Rust tests yet; it's compiled by the Android job. Testing it on
+      Linux needs Tauri's system packages (`libwebkit2gtk-4.1-dev` and others).
 - [ ] Root `README.md`: replace the Tauri template text with what the app does and how to run it
       (mise, pnpm, `tauri android dev --open`, `tauri ios dev --open`).
 
