@@ -371,8 +371,8 @@ build installed on the iPhone and an Android device.
   database. Still open, for phase 1: running on real phones (only cross-compiled so far).
 - [x] `crates/bookmarks`: schema v1, migrations, store, tags, search, index upkeep; 25 tests.
 - [x] `link-cleaner`: `links()` returns each link with its cleaned form and provider.
-- [ ] App shell with tabs and simple screen state in `App.tsx`.
-- [ ] Share plugin: `intent` field in `SharedContent`, Rust + Kotlin + Swift; existing flow sends `"share"`.
+- [x] App shell with tabs and simple screen state in `App.tsx`.
+- [x] Share plugin: `intent` field in `SharedContent`, Rust + Kotlin + Swift; existing flow sends `"share"`.
 - **Done when:** app opens on the Bookmarks tab (empty), sharing still opens the clean screen.
 
 #### Storage spike results
@@ -395,12 +395,20 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 ### Phase 1 – Save and list (Android + iOS)
 - [x] `Store::save/get/find_by_url/list/delete`, duplicate merge, unit tests.
 - [ ] Run the store on a real iPhone and Android phone (first real check of `turso` on device).
-- [ ] Tauri commands `bookmark_prepare`, `bookmark_save`, `bookmark_list`, `bookmark_get`, `bookmark_delete`.
+- [x] Tauri commands `bookmark_prepare`, `bookmark_save`, `bookmark_list`, `bookmark_get`, `bookmark_delete`
+      (`src-tauri/src/bookmarks.rs`; the store lives in a swappable `Library` holder).
+- [x] `tag_list`, `tag_rename`, `tag_delete` commands (for the tag dropdown and Settings → Tags).
+- [ ] Settings → Tags: every tag with how many bookmarks use it (unused tags show 0 and stay
+      until deleted); rename (merges into an existing name); delete, also for tags in use, after a
+      confirm that says how many bookmarks it will be removed from.
 - [ ] Android `activity-alias` "Save bookmark"; finish after save.
 - [ ] If Android sharing shortcuts exist by then ([roadmap](ROADMAP.md#share-sheet-position)),
       add "Save bookmark" as one.
 - [ ] iOS `SaveExtension` target in `project.yml`, App Group handoff, `cleanshare://save`.
-- [ ] Save screen (title, manual tags, note), list screen, detail screen (open, share, delete).
+- [x] Interim: "Save bookmark" button on the share screen, and the Bookmarks tab lists saved
+      bookmarks (tap opens the cleaned link).
+- [ ] Save screen (title, manual tags with a dropdown of existing tags, note), detail screen
+      (open, share, delete).
 - **Done when:** a YouTube, Instagram and X link can be saved from each app on both phones, appear
   cleaned in the list, and saving the same link twice shows the existing bookmark.
 
