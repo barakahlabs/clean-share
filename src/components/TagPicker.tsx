@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { TagCount } from "../bookmarks";
 import "./TagPicker.css";
 
@@ -33,6 +33,15 @@ export function TagPicker({ selected, available, onChange }: Props) {
     .slice(0, MAX_SUGGESTIONS);
   const exact = available.find((tag) => same(tag.name, typed));
   const canAddNew = typed !== "" && !exact && !isSelected(typed);
+  const listSize = suggestions.length + (canAddNew ? 1 : 0);
+
+  // When the list appears or changes size while typing, keep the field at the top of its
+  // scrolling container so the suggestions under it stay visible (not cut off by the sheet).
+  useEffect(() => {
+    if (open && document.activeElement === input.current) {
+      input.current?.scrollIntoView({ block: "start" });
+    }
+  }, [open, listSize, selected.length]);
 
   const add = (name: string) => {
     const tag = normalize(name);
@@ -98,13 +107,6 @@ export function TagPicker({ selected, available, onChange }: Props) {
         {open && (suggestions.length > 0 || canAddNew) && (
           // onMouseDown keeps focus in the field, so the list doesn't close before the tap lands.
           <ul id={listId} className="tag-suggestions" role="listbox" onMouseDown={(e) => e.preventDefault()}>
-            {canAddNew && (
-              <li role="option" aria-selected={false}>
-                <button type="button" className="tag-suggestion add" onClick={() => add(typed)}>
-                  Add “{typed}”
-                </button>
-              </li>
-            )}
             {suggestions.map((tag) => (
               <li key={tag.name} role="option" aria-selected={false}>
                 <button type="button" className="tag-suggestion" onClick={() => add(tag.name)}>
@@ -113,6 +115,14 @@ export function TagPicker({ selected, available, onChange }: Props) {
                 </button>
               </li>
             ))}
+            {/* Existing tags first: typing part of a name usually means one of them. */}
+            {canAddNew && (
+              <li role="option" aria-selected={false}>
+                <button type="button" className="tag-suggestion add" onClick={() => add(typed)}>
+                  Add “{typed}”
+                </button>
+              </li>
+            )}
           </ul>
         )}
       </div>
