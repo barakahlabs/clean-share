@@ -114,6 +114,12 @@
       "enabled": false
     },
     {
+      "description": "Renovate writes Corretto versions as 25.0.5+8.0.LTS, which mise can't install (it names them corretto-25.0.5.0.10), so update java by hand",
+      "matchManagers": ["mise"],
+      "matchPackageNames": ["java"],
+      "enabled": false
+    },
+    {
       "description": "turso is pinned (ADR 0001) and search relies on its behaviour, so updates wait for approval on the dependency dashboard",
       "matchPackageNames": ["turso"],
       "dependencyDashboardApproval": true,
