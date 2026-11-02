@@ -61,6 +61,14 @@ export type ListQuery = {
 
 export type Page<T> = { items: T[]; next: string | null };
 
+/** The bookmark on the save sheet, as it is now. `picked` tags are never suggested. */
+export type TagDraft = { text: string; title?: string | null; picked: string[] };
+
+/** Why a tag was suggested: named in the content, used on the same site, used together with a
+ * picked tag, or from the built-in provider map (YouTube → video). */
+export type SuggestionReason = "content" | "site" | "related" | "provider";
+export type Suggestion = { name: string; reason: SuggestionReason; score: number };
+
 export function prepareBookmark(text: string): Promise<Prepared> {
   return invoke("bookmark_prepare", { text });
 }
@@ -93,6 +101,11 @@ export function deleteBookmark(id: string): Promise<void> {
 /** Every tag with its bookmark count, most used first. */
 export function listTags(): Promise<TagCount[]> {
   return invoke("tag_list");
+}
+
+/** Tags to suggest for the bookmark on the save sheet, best first. */
+export function suggestTags(draft: TagDraft): Promise<Suggestion[]> {
+  return invoke("tag_suggest", { draft });
 }
 
 /** Renames a tag; if a tag named `to` exists, the two are merged. */

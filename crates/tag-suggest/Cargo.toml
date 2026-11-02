@@ -1,0 +1,9 @@
+[package]
+name = "tag-suggest"
+version = "0.1.0"
+description = "Clean Share tag suggestions: ranks tags for a bookmark from its content and the user's history"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }

@@ -414,3 +414,78 @@ fn titles_come_from_the_text_around_the_links() {
   // Every link is left out, not just the first.
   assert_eq!(title("see https://a.com/x and https://b.com/y").as_deref(), Some("see and"));
 }
+
+fn draft(text: &str, picked: &[&str]) -> crate::TagDraft {
+  crate::TagDraft {
+    text: text.into(),
+    title: None,
+    picked: picked.iter().map(|p| p.to_string()).collect(),
+  }
+}
+
+async fn suggested(store: &Store, draft: &crate::TagDraft) -> Vec<(String, crate::Reason)> {
+  store.suggest_tags(draft).await.unwrap().into_iter().map(|s| (s.name, s.reason)).collect()
+}
+
+#[tokio::test]
+async fn suggests_tags_used_on_the_same_site() {
+  use crate::Reason::*;
+  let mut store = store().await;
+  store.save(new("https://blog.example.com/one", &["reading", "rust"])).await.unwrap();
+  store.save(new("https://blog.example.com/two", &["reading"])).await.unwrap();
+  store.save(new("https://other.example.com/x", &["cooking"])).await.unwrap();
+
+  let got = suggested(&store, &draft("Look https://blog.example.com/three?utm_source=x", &[])).await;
+  assert_eq!(got, [("reading".into(), Site), ("rust".into(), Site)]);
+}
+
+#[tokio::test]
+async fn provider_counts_as_one_site_across_hosts() {
+  use crate::Reason::*;
+  let mut store = store().await;
+  store.save(new("https://www.youtube.com/watch?v=a1", &["talks"])).await.unwrap();
+
+  let got = suggested(&store, &draft("https://youtu.be/b2?si=TRACK", &[])).await;
+  assert_eq!(got, [("talks".into(), Site), ("video".into(), Provider)]);
+}
+
+#[tokio::test]
+async fn suggests_existing_tags_named_in_the_text_and_title() {
+  use crate::Reason::*;
+  let mut store = store().await;
+  store.save(new("https://a.example/1", &["Rust", "recipes"])).await.unwrap();
+
+  let mut d = draft("Async Rust in practice https://b.example/post", &[]);
+  d.title = Some("Weeknight recipe ideas".into());
+  // Same score and uses: by name.
+  assert_eq!(suggested(&store, &d).await, [("recipes".into(), Content), ("Rust".into(), Content)]);
+}
+
+#[tokio::test]
+async fn suggests_tags_used_together_with_the_picked_ones() {
+  use crate::Reason::*;
+  let mut store = store().await;
+  store.save(new("https://a.example/1", &["rust", "async"])).await.unwrap();
+  store.save(new("https://b.example/2", &["rust"])).await.unwrap();
+  store.save(new("https://c.example/3", &["cooking"])).await.unwrap();
+
+  let got = suggested(&store, &draft("https://d.example/4", &["Rust"])).await;
+  assert_eq!(got, [("async".into(), Related)]);
+}
+
+#[tokio::test]
+async fn editing_a_bookmark_doesnt_suggest_from_itself() {
+  let mut store = store().await;
+  store.save(new("https://blog.example.com/one", &["reading"])).await.unwrap();
+
+  // The only bookmark on this site is the one being edited, with its tag removed.
+  assert!(suggested(&store, &draft("https://blog.example.com/one", &[])).await.is_empty());
+}
+
+#[tokio::test]
+async fn hosts_only_match_exactly() {
+  let mut store = store().await;
+  store.save(new("https://box.com/file", &["storage"])).await.unwrap();
+
+  assert!(suggested(&store, &draft("https://ox.com/page", &[])).await.is_empty());
+}
