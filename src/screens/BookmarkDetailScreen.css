@@ -8,6 +8,23 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
+/* The picture fills the card's width, edge to edge at the top. */
+.detail-image {
+  display: block;
+  width: calc(100% + 32px);
+  max-height: 240px;
+  margin: -16px -16px 4px;
+  border-radius: 12px 12px 0 0;
+  object-fit: cover;
+  background: var(--border);
+}
+
+.detail-description {
+  margin: 0;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .detail-title {
   margin: 0;
   font-size: 1.4rem;
