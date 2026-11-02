@@ -1,3 +1,9 @@
 [default]
-description = "Read shared content, listen for new shares, and share text to other apps"
-permissions = ["allow-get-shared", "allow-share-text", "allow-register-listener", "allow-remove-listener"]
+description = "Read shared content, listen for new shares, share text to other apps, and return to the app that shared"
+permissions = [
+  "allow-get-shared",
+  "allow-share-text",
+  "allow-return-to-source",
+  "allow-register-listener",
+  "allow-remove-listener",
+]

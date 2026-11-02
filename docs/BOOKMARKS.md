@@ -402,10 +402,12 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 - [x] Settings → Tags: every tag with how many bookmarks use it (unused tags show "Unused" and
       stay until deleted); rename inline (warns and merges into an existing name); delete, also
       for tags in use, after an inline confirm that says how many bookmarks it will be removed from.
-- [ ] Android `activity-alias` "Save bookmark"; finish after save.
+- [x] Android `activity-alias` "Save bookmark" (`.SaveBookmark`); after saving or cancelling, the
+      app goes back to the app that shared (`return_to_source`, `moveTaskToBack`).
 - [ ] If Android sharing shortcuts exist by then ([roadmap](ROADMAP.md#share-sheet-position)),
       add "Save bookmark" as one.
-- [ ] iOS `SaveExtension` target in `project.yml`, App Group handoff, `cleanshare://save`.
+- [x] iOS `SaveExtension` target in `project.yml`: same `ShareViewController.swift`, its
+      `Info.plist` sets `CleanShareIntent = save`; App Group handoff, `cleanshare://save`.
 - [x] Interim: "Save bookmark" button on the share screen, and the Bookmarks tab lists saved
       bookmarks (tap opens the cleaned link).
 - [x] Save screen: cleaned link, title (suggested from the shared text), tags (chips; dropdown of

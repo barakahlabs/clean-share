@@ -32,6 +32,14 @@ impl<R: Runtime> ShareTarget<R> {
       .map_err(Into::into)
   }
 
+  pub fn return_to_source(&self) -> crate::Result<bool> {
+    self
+      .0
+      .run_mobile_plugin::<ReturnToSourceResponse>("returnToSource", ())
+      .map(|response| response.returned)
+      .map_err(Into::into)
+  }
+
   pub fn get_shared(&self) -> crate::Result<SharedContent> {
     self
       .0

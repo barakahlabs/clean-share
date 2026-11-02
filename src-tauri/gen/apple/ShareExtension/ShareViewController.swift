@@ -5,14 +5,17 @@ import UniformTypeIdentifiers
 ///
 /// It grabs the shared URL or text, stores it in the App Group that the main
 /// app's share-target plugin reads, then opens the main app.
+///
+/// Two extensions use this file: "Clean Share" (ShareExtension) and "Save bookmark"
+/// (SaveExtension). Each one's Info.plist says which it is in `CleanShareIntent`.
 final class ShareViewController: UIViewController {
   // Must match ShareTargetPlugin.swift in plugins/share-target.
   private let appGroup = "group.com.sirajulm.cleanshare"
   private let sharedTextKey = "sharedText"
   private let sharedIntentKey = "sharedIntent"
-  /// This extension is the "Clean & Share" entry.
-  private let intent = "share"
-  private let appURL = URL(string: "cleanshare://share")!
+  /// "share" (Clean & Share) or "save" (Save bookmark), from this extension's Info.plist.
+  private let intent = Bundle.main.object(forInfoDictionaryKey: "CleanShareIntent") as? String ?? "share"
+  private var appURL: URL { URL(string: "cleanshare://\(intent)")! }
 
   override func viewDidLoad() {
     super.viewDidLoad()

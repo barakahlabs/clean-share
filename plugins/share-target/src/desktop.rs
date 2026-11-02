@@ -18,6 +18,10 @@ impl<R: Runtime> ShareTarget<R> {
     Err(crate::Error::Unsupported("sharing is only available on Android and iOS"))
   }
 
+  pub fn return_to_source(&self) -> crate::Result<bool> {
+    Ok(false)
+  }
+
   pub fn get_shared(&self) -> crate::Result<SharedContent> {
     Ok(SharedContent::default())
   }
