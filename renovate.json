@@ -1,12 +1,112 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "local>barakahlabs/configs//renovate/default_config",
-    "local>barakahlabs/configs//renovate/mobile_config",
-    "local>barakahlabs/configs//renovate/base",
-    "local>barakahlabs/configs//renovate/tauri_config"
+  "description": [
+    "Copy of the barakahlabs/configs presets (default, mobile, base, tauri) plus this repo's rules at the end",
+    "This repo is public, and the Renovate app can't read private presets from public repos, so keep it in sync by hand"
   ],
+  "timezone": "Europe/Berlin",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":rebaseStalePrs",
+    ":renovatePrefix",
+    ":semanticCommits",
+    ":enableVulnerabilityAlerts",
+    ":maintainLockFilesMonthly",
+    ":configMigration",
+    ":label(dependencies)",
+    ":ignoreUnstable",
+    "docker:disable",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "schedule": ["before 9am on Monday", "before 9am on Thursday"],
+  "vulnerabilityAlerts": {
+    "schedule": ["at any time"],
+    "addLabels": ["security"]
+  },
+  "baseBranchPatterns": ["main"],
+  "automerge": true,
+  "branchNameStrict": true,
   "packageRules": [
+    {
+      "groupName": "npm/pnpm non-major",
+      "matchManagers": ["npm", "pnpm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "addLabels": ["automerge", "javascript"]
+    },
+    {
+      "groupName": "Cargo non-major",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "addLabels": ["automerge", "rust"]
+    },
+    {
+      "matchPackageNames": ["node"],
+      "matchDepTypes": ["engines"],
+      "rangeStrategy": "bump",
+      "enabled": true,
+      "separateMajorMinor": true,
+      "allowedVersions": "/^\\d*[02468]\\./",
+      "description": ["Use only even Node majors (the LTS lines), so the rule needs no yearly edit", "An even major is offered from its April release, before it becomes LTS in October"]
+    },
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "addLabels": ["automerge"]
+    },
+    {
+      "description": "Android in one PR: AndroidX, Material, Kotlin, the Android Gradle plugin and Gradle itself",
+      "groupName": "Android",
+      "matchManagers": ["gradle", "gradle-wrapper"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": false,
+      "addLabels": ["android"]
+    },
+    {
+      "groupName": "iOS dependencies",
+      "matchManagers": ["cocoapods", "swift"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": false,
+      "addLabels": ["ios"]
+    },
+    {
+      "description": "Toolchain pinned in mise.toml (Node, pnpm, Java, ...) in one PR",
+      "groupName": "Toolchain",
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": false,
+      "addLabels": ["toolchain"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "minimumReleaseAge": "30 days",
+      "description": "Wait 30 days before updating GitHub Actions to avoid potential (security) issues with new releases"
+    },
+    {
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "3 days",
+      "description": "Prevent relying on packages that can be removed from the registry up to 3 days after publication"
+    },
+    {
+      "matchDatasources": ["crate"],
+      "minimumReleaseAge": "3 days",
+      "description": "Same wait for crates.io, where authors can yank a release"
+    },
+    {
+      "description": "Tauri crates and npm packages must move together, so one PR for all of them, majors included. Merge by hand after building every platform",
+      "groupName": "Tauri",
+      "matchPackageNames": ["tauri", "tauri-build", "tauri-plugin", "tauri-plugin-*", "@tauri-apps/**"],
+      "automerge": false,
+      "addLabels": ["tauri"]
+    },
+    {
+      "description": "Only non-major updates automerge; majors wait for a review. Keep this rule last so it overrides the groups above",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
     {
       "description": "NDK_HOME in mise.toml has the android-sdk version in its path, so update it by hand",
       "matchManagers": ["mise"],
