@@ -420,6 +420,7 @@ fn draft(text: &str, picked: &[&str]) -> crate::TagDraft {
     text: text.into(),
     title: None,
     picked: picked.iter().map(|p| p.to_string()).collect(),
+    page: None,
   }
 }
 
@@ -488,4 +489,97 @@ async fn hosts_only_match_exactly() {
   store.save(new("https://box.com/file", &["storage"])).await.unwrap();
 
   assert!(suggested(&store, &draft("https://ox.com/page", &[])).await.is_empty());
+}
+
+fn preview(title: &str, keywords: &[&str], kind: &str) -> crate::PreviewData {
+  crate::PreviewData {
+    title: Some(title.into()),
+    description: Some("A quick weeknight dinner.".into()),
+    site_name: Some("Example Kitchen".into()),
+    image_url: Some("https://kitchen.example/lasagna.jpg".into()),
+    keywords: keywords.iter().map(|k| k.to_string()).collect(),
+    page_kind: Some(kind.into()),
+    excerpt: Some("Layer the sauce and pasta, then bake.".into()),
+    ..Default::default()
+  }
+}
+
+#[tokio::test]
+async fn stores_a_preview_without_replacing_the_users_title() {
+  let mut store = store().await;
+  let saved = store.save(new("My lasagna https://kitchen.example/lasagna", &[])).await.unwrap().bookmark;
+  let untitled = store.save(new("https://kitchen.example/soup", &[])).await.unwrap().bookmark;
+  assert_eq!(saved.preview_status, PreviewStatus::None);
+
+  let b = store.set_preview(&saved.id, &preview("Weeknight Lasagna", &["pasta", "Italian"], "recipe")).await.unwrap();
+  assert_eq!(b.title.as_deref(), Some("My lasagna"));
+  assert_eq!(b.description.as_deref(), Some("A quick weeknight dinner."));
+  assert_eq!(b.keywords, ["pasta", "Italian"]);
+  assert_eq!(b.page_kind.as_deref(), Some("recipe"));
+  assert_eq!(b.preview_status, PreviewStatus::Done);
+  assert!(b.preview_fetched_at.is_some());
+
+  // No title yet: the preview's is used.
+  let b = store.set_preview(&untitled.id, &preview("Tomato Soup", &[], "recipe")).await.unwrap();
+  assert_eq!(b.title.as_deref(), Some("Tomato Soup"));
+}
+
+#[tokio::test]
+async fn the_preview_queue_holds_pending_bookmarks_newest_first() {
+  let mut store = store().await;
+  let a = store.save(new("https://a.example/1", &[])).await.unwrap().bookmark;
+  let b = store.save(new("https://b.example/2", &[])).await.unwrap().bookmark;
+  let c = store.save(new("https://c.example/3", &[])).await.unwrap().bookmark;
+  store.set_preview_status(&c.id, PreviewStatus::Failed).await.unwrap();
+  assert!(store.preview_queue(10).await.unwrap().is_empty());
+
+  // Switching previews on queues those that never had one; failed ones stay failed.
+  assert_eq!(store.queue_missing_previews().await.unwrap(), 2);
+  let queue = store.preview_queue(10).await.unwrap();
+  assert_eq!(queue, [(b.id.clone(), b.url.clone()), (a.id.clone(), a.url.clone())]);
+
+  store.set_preview(&b.id, &crate::PreviewData::default()).await.unwrap();
+  assert_eq!(store.preview_queue(10).await.unwrap(), [(a.id.clone(), a.url.clone())]);
+  assert!(matches!(store.set_preview_status("missing", PreviewStatus::Pending).await, Err(Error::NotFound)));
+}
+
+#[tokio::test]
+async fn suggestions_use_the_page_keywords_and_kind() {
+  use crate::Reason::*;
+  let mut store = store().await;
+  store.save(new("https://other.example/1", &["Pasta"])).await.unwrap();
+
+  // A draft with a preview fetched for the save sheet.
+  let mut d = draft("https://kitchen.example/lasagna", &[]);
+  d.page = Some(crate::PageInfo { keywords: vec!["pasta".into()], kind: Some("recipe".into()), ..Default::default() });
+  assert_eq!(suggested(&store, &d).await, [("Pasta".into(), Page), ("recipe".into(), Page)]);
+
+  // Editing a saved bookmark: its stored preview is used. Its excerpt names pasta, which
+  // counts as content (stronger than the keyword).
+  let saved = store.save(new("https://kitchen.example/lasagna", &[])).await.unwrap().bookmark;
+  store.set_preview(&saved.id, &preview("Lasagna", &["pasta"], "recipe")).await.unwrap();
+  let got = suggested(&store, &draft("https://kitchen.example/lasagna", &[])).await;
+  assert_eq!(got, [("Pasta".into(), Content), ("recipe".into(), Page)]);
+}
+
+#[tokio::test]
+async fn a_version_1_database_keeps_its_bookmarks_when_migrated() {
+  let conn = db::open(&Location::Memory).await.unwrap();
+  conn.execute_batch(include_str!("../../migrations/0001_init.sql")).await.unwrap();
+  conn.execute_batch("PRAGMA user_version = 1").await.unwrap();
+  conn
+    .execute(
+      "INSERT INTO bookmark (id, url, original_url, title, shared_text, rules_revision, created_at, updated_at)
+       VALUES ('b1', 'https://old.example/', 'https://old.example/?utm_source=x', 'Old one', 'Old one https://old.example/?utm_source=x', 'r1', 1, 1)",
+      (),
+    )
+    .await
+    .unwrap();
+
+  let store = Store::new(conn, Arc::new(BundledRules), Arc::new(TestClock(AtomicI64::new(1_000)))).await.unwrap();
+  let b = store.get("b1").await.unwrap().unwrap();
+  assert_eq!(b.title.as_deref(), Some("Old one"));
+  assert!(b.keywords.is_empty());
+  assert_eq!((b.page_kind, b.excerpt), (None, None));
+  assert_eq!(search(&store, "old").await, ["https://old.example/"]);
 }

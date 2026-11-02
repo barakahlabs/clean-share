@@ -6,13 +6,16 @@
 //! test, and later ones (on-device or cloud AI, `docs/BOOKMARKS.md` "Tagging") fit the same
 //! trait.
 //!
-//! [`MatchSuggester`] is tier 1: offline, on every phone. It combines four reasons:
+//! [`MatchSuggester`] is tier 1: offline, on every phone. It combines five reasons:
 //!
 //! - [`Reason::Content`]: an existing tag whose name appears in the title, text or link
 //!   (`video` also matches "videos").
 //! - [`Reason::Site`]: tags the user put on other bookmarks from the same site.
 //! - [`Reason::Related`]: tags often used together with the ones already picked.
 //! - [`Reason::Provider`]: a small built-in map, e.g. YouTube → `video`.
+//! - [`Reason::Page`]: what the page says about itself in its preview: its declared keywords
+//!   (an existing tag that matches one ranks high; a few others are offered as new tags) and its
+//!   kind (a recipe page suggests `recipe`).
 
 mod words;
 
@@ -23,10 +26,15 @@ use serde::{Deserialize, Serialize};
 /// What the bookmark is about.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Content {
-  /// Title, shared text and the cleaned link (its host and path words count too).
+  /// Title, shared text, the cleaned link (its host and path words count too) and, with a
+  /// preview, the page's description and excerpt.
   pub text: String,
   /// Provider id from the cleaning rules (e.g. `youtube`), if one matched.
   pub provider: Option<String>,
+  /// Keywords the page declares (from its preview).
+  pub keywords: Vec<String>,
+  /// What the page is, from its preview: `recipe`, `article`, `video`…
+  pub kind: Option<String>,
 }
 
 /// How the user has tagged so far. `site` and `related` leave out the bookmark being tagged.
@@ -63,6 +71,7 @@ pub enum Reason {
   Site,
   Related,
   Provider,
+  Page,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -97,6 +106,12 @@ const SITE: f32 = 2.0;
 const SITE_BASE: f32 = 0.5;
 const RELATED: f32 = 1.5;
 const PROVIDER: f32 = 1.0;
+/// A page keyword that matches an existing tag.
+const PAGE_MATCH: f32 = 2.5;
+/// A page keyword offered as a new tag; only the first few, short ones.
+const PAGE_NEW: f32 = 0.75;
+const PAGE_NEW_MAX: usize = 3;
+const PAGE_KIND: f32 = 1.0;
 
 /// Provider id (from the cleaning rules) → tag. Kept short and generic on purpose.
 const PROVIDER_TAGS: &[(&str, &str)] = &[
@@ -107,6 +122,18 @@ const PROVIDER_TAGS: &[(&str, &str)] = &[
   ("x", "social"),
   ("threads", "social"),
   ("facebook", "social"),
+];
+
+/// Page kind (from `crates/link-preview`) → tag. Kinds like `article` say too little to be a tag.
+const KIND_TAGS: &[(&str, &str)] = &[
+  ("recipe", "recipe"),
+  ("video", "video"),
+  ("music", "music"),
+  ("podcast", "podcast"),
+  ("book", "book"),
+  ("movie", "movie"),
+  ("event", "event"),
+  ("product", "shopping"),
 ];
 
 impl TagSuggester for MatchSuggester {
@@ -139,8 +166,30 @@ impl TagSuggester for MatchSuggester {
         ranking.add(tag, Reason::Provider, PROVIDER);
       }
     }
+    let mut new_keywords = 0;
+    for keyword in &content.keywords {
+      if ranking.is_known(keyword) {
+        ranking.add(keyword, Reason::Page, PAGE_MATCH);
+      } else if new_keywords < PAGE_NEW_MAX && usable_as_tag(keyword) {
+        ranking.add(keyword, Reason::Page, PAGE_NEW);
+        new_keywords += 1;
+      }
+    }
+    if let Some(kind) = content.kind.as_deref() {
+      for (_, tag) in KIND_TAGS.iter().filter(|(k, _)| *k == kind) {
+        ranking.add(tag, Reason::Page, PAGE_KIND);
+      }
+    }
     ranking.best(limit)
   }
+}
+
+/// Short enough to be a tag, and more than a number: at most 3 words and 25 characters.
+fn usable_as_tag(keyword: &str) -> bool {
+  let words = keyword.split_whitespace().count();
+  (1..=3).contains(&words)
+    && keyword.chars().count() <= 25
+    && keyword.chars().any(char::is_alphabetic)
 }
 
 /// Collects scores per tag, keyed by the tag's stemmed name so `Video` and `videos` are one tag.
@@ -165,6 +214,10 @@ impl<'a> Ranking<'a> {
       picked: picked.iter().map(|name| words::key(name)).collect(),
       scores: HashMap::new(),
     }
+  }
+
+  fn is_known(&self, name: &str) -> bool {
+    self.known.contains_key(&words::key(name))
   }
 
   fn add(&mut self, name: &str, reason: Reason, score: f32) {

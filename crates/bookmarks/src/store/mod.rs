@@ -1,6 +1,7 @@
 //! All reads and writes. Works on one connection to one user's database.
 
 mod list;
+mod preview;
 mod row;
 mod suggest;
 mod tags;

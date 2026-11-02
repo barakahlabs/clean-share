@@ -5,7 +5,15 @@ fn tags(list: &[(&str, u32)]) -> Vec<TagUse> {
 }
 
 fn content(text: &str, provider: Option<&str>) -> Content {
-  Content { text: text.into(), provider: provider.map(Into::into) }
+  Content { text: text.into(), provider: provider.map(Into::into), ..Default::default() }
+}
+
+fn page(keywords: &[&str], kind: Option<&str>) -> Content {
+  Content {
+    keywords: keywords.iter().map(|k| k.to_string()).collect(),
+    kind: kind.map(Into::into),
+    ..Default::default()
+  }
 }
 
 fn suggest(content: &Content, history: &History, picked: &[&str]) -> Vec<(String, Reason)> {
@@ -127,4 +135,35 @@ fn at_most_limit_suggestions() {
 fn nothing_to_go_on_means_no_suggestions() {
   let history = History { tags: tags(&[("rust", 3)]), ..Default::default() };
   assert!(suggest(&content("https://example.com/", None), &history, &[]).is_empty());
+}
+
+#[test]
+fn page_keywords_that_match_existing_tags_rank_high() {
+  let history = History { tags: tags(&[("Pasta", 3), ("weeknight", 1)]), ..Default::default() };
+  let got = suggest(&page(&["pastas", "Italian"], None), &history, &[]);
+  assert_eq!(got, [("Pasta".into(), Reason::Page), ("Italian".into(), Reason::Page)]);
+}
+
+#[test]
+fn only_a_few_short_page_keywords_become_new_tags() {
+  let got = suggest(
+    &page(&["2026", "a keyword that is far too long for a tag", "webdev", "tutorial", "lesson", "app development"], None),
+    &History::default(),
+    &[],
+  );
+  // Numbers and long phrases are skipped; then the first three.
+  assert_eq!(names(&got), ["lesson", "tutorial", "webdev"]);
+}
+
+#[test]
+fn the_page_kind_suggests_a_tag() {
+  assert_eq!(
+    suggest(&page(&[], Some("recipe")), &History::default(), &[]),
+    [("recipe".into(), Reason::Page)]
+  );
+  assert_eq!(
+    suggest(&page(&[], Some("product")), &History::default(), &[]),
+    [("shopping".into(), Reason::Page)]
+  );
+  assert!(suggest(&page(&[], Some("article")), &History::default(), &[]).is_empty());
 }
