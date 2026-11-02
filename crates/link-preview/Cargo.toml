@@ -1,0 +1,23 @@
+[package]
+name = "link-preview"
+version = "0.1.0"
+description = "Clean Share link previews: fetches a page's title, description, image, keywords and type, with limits"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+encoding_rs = "0.8"
+# TLS: rustls with ring and the bundled Mozilla roots, so it builds and verifies the same way on
+# Android and iOS (the platform verifier needs extra setup on Android).
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "http2"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+scraper = "0.29"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["net"] }
+url = "2"
+webpki-roots = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros", "net", "io-util", "time"] }
