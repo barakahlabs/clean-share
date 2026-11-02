@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { listBookmarks, listTags, type Bookmark, type TagCount } from "../bookmarks";
+import {
+  getBookmark,
+  listBookmarks,
+  listTags,
+  onPreview,
+  thumbnailUrl,
+  type Bookmark,
+  type TagCount,
+} from "../bookmarks";
+import { Thumbnail } from "../components/Thumbnail";
 import { formatDate, hostOf } from "../format";
 import { BookmarkDetailScreen } from "./BookmarkDetailScreen";
 import "./Screen.css";
@@ -11,7 +20,8 @@ const SEARCH_DELAY_MS = 200;
 /**
  * Saved bookmarks: newest first, or by relevance while searching. A search box (as you type)
  * and tag chips (all selected tags must match) narrow the list. Tapping a bookmark opens its
- * detail screen; Android's back button (or "‹ Bookmarks") returns to the list.
+ * detail screen; Android's back button (or "‹ Bookmarks") returns to the list. With link
+ * previews on, each card shows its thumbnail, updated as previews arrive.
  */
 export function BookmarksScreen() {
   const [items, setItems] = useState<Bookmark[] | null>(null);
@@ -55,6 +65,19 @@ export function BookmarksScreen() {
   useEffect(() => {
     reloadTags();
   }, []);
+
+  // A preview finished in the background: refresh that card.
+  useEffect(
+    () =>
+      onPreview((id) => {
+        getBookmark(id)
+          .then((fresh) => {
+            if (fresh) setItems((old) => old?.map((b) => (b.id === id ? fresh : b)) ?? old);
+          })
+          .catch(() => {});
+      }),
+    [],
+  );
 
   const toggleTag = (name: string) =>
     setSelected((old) => (old.includes(name) ? old.filter((t) => t !== name) : [...old, name]));
@@ -149,19 +172,22 @@ export function BookmarksScreen() {
             {items.map((bookmark) => (
               <li key={bookmark.id}>
                 <button type="button" className="bookmark-item" onClick={() => open(bookmark.id)}>
-                  <span className="bookmark-title">{bookmark.title ?? bookmark.url}</span>
-                  <span className="bookmark-meta">
-                    {hostOf(bookmark.url)} · {formatDate(bookmark.createdAt)}
-                  </span>
-                  {bookmark.tags.length > 0 && (
-                    <span className="bookmark-tags">
-                      {bookmark.tags.map((tag) => (
-                        <span key={tag.name} className="bookmark-tag">
-                          {tag.name}
-                        </span>
-                      ))}
+                  <span className="bookmark-text">
+                    <span className="bookmark-title">{bookmark.title ?? bookmark.url}</span>
+                    <span className="bookmark-meta">
+                      {bookmark.siteName ?? hostOf(bookmark.url)} · {formatDate(bookmark.createdAt)}
                     </span>
-                  )}
+                    {bookmark.tags.length > 0 && (
+                      <span className="bookmark-tags">
+                        {bookmark.tags.map((tag) => (
+                          <span key={tag.name} className="bookmark-tag">
+                            {tag.name}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
+                  <Thumbnail src={thumbnailUrl(bookmark)} className="bookmark-thumb" />
                 </button>
               </li>
             ))}

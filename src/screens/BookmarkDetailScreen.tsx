@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { deleteBookmark, getBookmark, type Bookmark } from "../bookmarks";
+import {
+  deleteBookmark,
+  getBookmark,
+  onPreview,
+  retryPreview,
+  thumbnailUrl,
+  type Bookmark,
+} from "../bookmarks";
+import { getSettings } from "../settings";
+import { Thumbnail } from "../components/Thumbnail";
 import { shareText } from "../shareTarget";
 import { ConfirmSheet } from "../components/ConfirmSheet";
 import { formatDate, hostOf } from "../format";
@@ -16,14 +25,16 @@ type Props = {
 };
 
 /**
- * One bookmark: title, cleaned link, site and date, tags and note, with Open, Share, Edit (the
- * save sheet in edit mode) and Delete (after a confirm sheet).
+ * One bookmark: picture and description (with link previews on), title, cleaned link, site and
+ * date, tags and note, with Open, Share, Edit (the save sheet in edit mode) and Delete (after a
+ * confirm sheet).
  */
 export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
   const [bookmark, setBookmark] = useState<Bookmark | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [previewsOn, setPreviewsOn] = useState(false);
 
   const load = useCallback(
     () =>
@@ -36,6 +47,21 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    getSettings()
+      .then((s) => setPreviewsOn(s.previews))
+      .catch(() => {});
+  }, []);
+
+  // Its preview finished in the background: show it.
+  useEffect(() => onPreview((done) => done === id && load()), [id, load]);
+
+  const retry = () => {
+    if (!bookmark) return;
+    setBookmark({ ...bookmark, previewStatus: "pending" });
+    retryPreview(bookmark.id).catch((e) => setError(String(e)));
+  };
 
   // The edit sheet has a history entry, so Android's back button closes it (and only it).
   useEffect(() => {
@@ -59,11 +85,31 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
       ) : bookmark === null ? null : (
         <>
           <section className="detail-card">
+            <Thumbnail src={thumbnailUrl(bookmark)} className="detail-image" />
             <h1 className="detail-title">{bookmark.title ?? hostOf(bookmark.url)}</h1>
+            {bookmark.description && <p className="detail-description">{bookmark.description}</p>}
             <p className="detail-url">{bookmark.url}</p>
             <p className="detail-meta">
-              {hostOf(bookmark.url)} · Saved {formatDate(bookmark.createdAt)}
+              {[
+                bookmark.siteName ?? hostOf(bookmark.url),
+                bookmark.author,
+                bookmark.published && `Published ${formatPublished(bookmark.published)}`,
+                `Saved ${formatDate(bookmark.createdAt)}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
+            {previewsOn && bookmark.previewStatus === "pending" && (
+              <p className="detail-meta">Fetching preview…</p>
+            )}
+            {previewsOn && bookmark.previewStatus === "failed" && (
+              <p className="detail-meta">
+                Couldn't load a preview.{" "}
+                <button type="button" className="text-button" onClick={retry}>
+                  Retry
+                </button>
+              </p>
+            )}
             {bookmark.tags.length > 0 && (
               <ul className="detail-tags" aria-label="Tags">
                 {bookmark.tags.map((tag) => (
@@ -121,4 +167,10 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
       )}
     </main>
   );
+}
+
+/** A publish date from the page (usually ISO 8601) as a local date; as given if it isn't one. */
+function formatPublished(value: string) {
+  const ms = Date.parse(value);
+  return Number.isNaN(ms) ? value : formatDate(ms);
 }
