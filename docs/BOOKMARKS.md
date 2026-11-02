@@ -263,7 +263,7 @@ stay in `shared_text` (the save screen shows a picker when there is more than on
 | `bookmark_list` | `search?`, `tags[]`, `cursor?` | page of bookmarks |
 | `bookmark_get` / `bookmark_update` / `bookmark_delete` | id (+ patch) | bookmark / – |
 | `tag_list` / `tag_rename` / `tag_delete` | – / names | tags with counts |
-| `tag_suggest` | `bookmark_id` or draft text | `[{ name, source, score }]` |
+| `tag_suggest` | draft: `text`, `title`, `picked` tags | `[{ name, reason, score }]`, best first |
 | `settings_get` / `settings_set` | key / value | – |
 | `preview_fetch` (phase 3) | id | updated bookmark (runs in the background, emits an event) |
 
@@ -311,13 +311,23 @@ Implementation: `reqwest` (rustls) + `scraper` for HTML, `image` for resizing, i
 
 ### Tier 1 – suggestions (phase 2, every phone, offline)
 
-`crates/tag-suggest` with a `MatchSuggester`:
-- **Existing tags** whose name (or a simple singular/plural form) appears in the content.
-- **Provider tags**: a small built-in map, e.g. youtube → `video`, spotify → `music`,
-  instagram/x/threads/tiktok → `social`. Shown only if the user has used the tag before or accepts it.
-- **Co-occurrence**: tags often used together with already-picked tags, and tags used for other
-  bookmarks from the same site.
-- Ranked by score; top 5 shown as chips.
+`crates/tag-suggest` with a `MatchSuggester` (pure: the store gathers the history and passes it
+in). Each reason adds to a tag's score:
+- **Content** (3): an existing tag whose name appears in the title, the shared text (links
+  removed) or the cleaned link's words. Multi-word tags need the whole phrase; plurals match the
+  singular (`video` ↔ "videos").
+- **Site** (0.5 + 2 × share): tags on the user's other bookmarks from the same site. The site is
+  the rules' provider when one matched (so `youtu.be` and `youtube.com` count as one), otherwise
+  the host without `www.`.
+- **Related** (1.5 × share): tags on the bookmarks that have any of the picked tags.
+- **Provider** (1): a small built-in map, e.g. youtube/tiktok → `video`, spotify → `music`,
+  instagram/x/threads/facebook → `social`. Suggested even if the tag doesn't exist yet (accepting
+  it creates it); an existing tag with the same singular form is used instead.
+- "Share" is the fraction of that group's bookmarks with the tag, from the newest 500 at most. The
+  bookmark being edited is left out of both groups.
+- Ranked by score, then by how often the tag is used, then by name; top 5 shown as chips under the
+  tag field. Picked tags are never suggested; picking one asks again (related tags change).
+- A tag taken from a chip is saved with `source = "suggested"`.
 
 ### Tier 2 – on-device AI (phase 4, newer phones)
 
@@ -423,7 +433,7 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 - [x] Store: tags, filter by tags (AND), search-as-you-type (ngram), rename/merge/delete tags.
 - [x] Tag input with autocomplete (save sheet); Bookmarks tab: search box (as you type) and tag
       filter chips (all selected tags must match), with "Clear filters" when nothing matches.
-- [ ] `crates/tag-suggest` `MatchSuggester` + tests; `tag_suggest` command; chips on the save screen.
+- [x] `crates/tag-suggest` `MatchSuggester` + tests; `tag_suggest` command; chips on the save screen.
 - **Done when:** search finds by any word in title/note/tags; suggestions appear for repeat sites.
 
 ### Phase 3 – Preview cards

@@ -486,6 +486,7 @@ version = "0.1.0"
 dependencies = [
  "link-cleaner",
  "serde",
+ "tag-suggest",
  "thiserror 2.0.21",
  "turso",
  "uuid",
@@ -4573,6 +4574,13 @@ dependencies = [
  "pkg-config",
  "toml 0.8.2",
  "version-compare",
+]
+
+[[package]]
+name = "tag-suggest"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
