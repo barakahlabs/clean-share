@@ -1,6 +1,23 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "local>barakahlabs/configs//renovate/default_config",
+    "local>barakahlabs/configs//renovate/mobile_config",
+    "local>barakahlabs/configs//renovate/base",
+    "local>barakahlabs/configs//renovate/tauri_config"
+  ],
+  "packageRules": [
+    {
+      "description": "NDK_HOME in mise.toml has the android-sdk version in its path, so update it by hand",
+      "matchManagers": ["mise"],
+      "matchPackageNames": ["android-sdk"],
+      "enabled": false
+    },
+    {
+      "description": "turso is pinned (ADR 0001) and search relies on its behaviour, so updates wait for approval on the dependency dashboard",
+      "matchPackageNames": ["turso"],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    }
   ]
 }
