@@ -4,13 +4,19 @@ import {
   prepareBookmark,
   saveBookmark,
   setBookmarkTags,
+  suggestTags,
   updateBookmark,
   type Prepared,
+  type Suggestion,
   type TagCount,
+  type TagSource,
 } from "../bookmarks";
 import { BottomSheet } from "../components/BottomSheet";
 import { TagPicker } from "../components/TagPicker";
 import "./SaveBookmarkSheet.css";
+
+/** How long the title has to stay unchanged before suggestions use it. */
+const TITLE_DELAY_MS = 300;
 
 type Props = {
   text: string;
@@ -22,6 +28,9 @@ type Props = {
  * A bottom sheet that saves the first link in shared text as a bookmark: title, tags, and an
  * optional note. If the link (after cleaning) is already saved, it edits that bookmark instead.
  * The fields scroll; the Save button stays at the bottom of the sheet, above the keyboard.
+ *
+ * Suggested tags show as chips under the tag field and update as tags are picked. A tag taken
+ * from a suggestion is saved with source "suggested".
  */
 export function SaveBookmarkSheet({ text, onDone }: Props) {
   const [prepared, setPrepared] = useState<Prepared | null>(null);
@@ -30,6 +39,10 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
   const [note, setNote] = useState("");
   const [showNote, setShowNote] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  // Where each tag came from, by lowercased name; tags not in here are the user's own.
+  const [sources, setSources] = useState<Record<string, TagSource>>({});
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [settledTitle, setSettledTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +58,9 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
         setNote(saved?.note ?? "");
         setShowNote(Boolean(saved?.note));
         setTags(saved ? saved.tags.map((tag) => tag.name) : []);
+        setSources(
+          Object.fromEntries((saved?.tags ?? []).map((tag) => [tag.name.toLowerCase(), tag.source])),
+        );
       })
       .catch((e) => current && setError(String(e)));
     return () => {
@@ -55,11 +71,41 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
   const link = prepared?.links[0];
   const existing = prepared?.existing ?? null;
 
+  useEffect(() => {
+    const timer = setTimeout(() => setSettledTitle(title.trim()), TITLE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [title]);
+
+  // Ask again whenever the picked tags change: they bring related tags along.
+  useEffect(() => {
+    if (!link) return;
+    let current = true;
+    suggestTags({ text, title: settledTitle || null, picked: tags })
+      .then((found) => current && setSuggestions(found))
+      .catch(() => current && setSuggestions([]));
+    return () => {
+      current = false;
+    };
+  }, [link, text, settledTitle, tags]);
+
+  // Tags added by typing or from the dropdown are the user's own.
+  const changeTags = (next: string[]) => {
+    const added = next.filter((name) => !tags.includes(name));
+    setSources((old) => ({ ...old, ...Object.fromEntries(added.map((n) => [n.toLowerCase(), "user"])) }));
+    setTags(next);
+  };
+
+  const acceptSuggestion = (name: string) => {
+    setSuggestions((old) => old.filter((s) => s.name !== name));
+    setSources((old) => ({ ...old, [name.toLowerCase()]: "suggested" }));
+    setTags((old) => [...old, name]);
+  };
+
   const save = async () => {
     setSaving(true);
     setError(null);
     try {
-      const tagInputs = tags.map((name) => ({ name }));
+      const tagInputs = tags.map((name) => ({ name, source: sources[name.toLowerCase()] ?? "user" }));
       if (existing) {
         await updateBookmark(existing.id, { title, note });
         await setBookmarkTags(existing.id, tagInputs);
@@ -115,7 +161,22 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
 
             <div className="save-field">
               <span className="save-label">Tags</span>
-              <TagPicker selected={tags} available={allTags} onChange={setTags} />
+              <TagPicker selected={tags} available={allTags} onChange={changeTags} />
+              {suggestions.length > 0 && (
+                <div className="tag-suggested" role="group" aria-label="Suggested tags">
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.name}
+                      type="button"
+                      className="tag-suggested-chip"
+                      aria-label={`Add suggested tag ${suggestion.name}`}
+                      onClick={() => acceptSuggestion(suggestion.name)}
+                    >
+                      + {suggestion.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {showNote ? (
