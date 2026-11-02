@@ -14,6 +14,8 @@
 //! - [`Store`] runs the migrations and all reads and writes on that connection.
 //! - [`Cleaner`] (tracking rules) and [`Clock`] are passed in, so tests and downloaded rules can
 //!   replace them.
+//! - [`Store::suggest_tags`] gathers the user's tagging history and ranks tags with the
+//!   `tag-suggest` crate.
 //!
 //! IDs are derived from content (cleaned URL, tag name), so two devices that save the same link
 //! offline create the same row, which helps sync merge them.
@@ -33,3 +35,4 @@ pub use error::{Error, Result};
 pub use migrate::SCHEMA_VERSION;
 pub use model::*;
 pub use store::Store;
+pub use tag_suggest::{Reason, Suggestion};

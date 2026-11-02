@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use ::bookmarks::{
     Bookmark, BookmarkPatch, BookmarkTag, ListQuery, NewBookmark, Page, Prepared, Saved, Store,
-    TagCount, TagInput, db::Location,
+    Suggestion, TagCount, TagDraft, TagInput, db::Location,
 };
 use serde::{Serialize, Serializer};
 use tauri::{AppHandle, Manager, State, async_runtime::Mutex};
@@ -150,6 +150,15 @@ pub async fn bookmark_delete(library: State<'_, Library>, id: String) -> Command
 #[tauri::command]
 pub async fn tag_list(library: State<'_, Library>) -> CommandResult<Vec<TagCount>> {
     with_store!(library, |store| store.tags())
+}
+
+/// Tags to suggest for the bookmark on the save sheet, best first (never one already picked).
+#[tauri::command]
+pub async fn tag_suggest(
+    library: State<'_, Library>,
+    draft: TagDraft,
+) -> CommandResult<Vec<Suggestion>> {
+    with_store!(library, |store| store.suggest_tags(&draft))
 }
 
 /// Renames a tag; if a tag named `to` exists, the two are merged.

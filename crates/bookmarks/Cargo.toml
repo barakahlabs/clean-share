@@ -7,6 +7,7 @@ license = "MIT"
 
 [dependencies]
 link-cleaner = { path = "../link-cleaner" }
+tag-suggest = { path = "../tag-suggest" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 # No mimalloc: a library shouldn't replace the app's allocator.

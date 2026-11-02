@@ -93,3 +93,25 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* Suggested tags: dashed, so they read as "not added yet". One tap adds one. */
+.tag-suggested {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-suggested-chip {
+  padding: 6px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: none;
+  cursor: pointer;
+}
+
+.tag-suggested-chip:active {
+  opacity: 0.7;
+}

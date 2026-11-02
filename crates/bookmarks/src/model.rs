@@ -107,6 +107,18 @@ pub struct Prepared {
   pub title: Option<String>,
 }
 
+/// A bookmark being tagged, for [`crate::Store::suggest_tags`]: the save sheet's current state.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TagDraft {
+  /// The shared text (or a saved bookmark's link); its first link is the one being tagged.
+  pub text: String,
+  pub title: Option<String>,
+  /// Tags already on it. They're never suggested, and they bring related tags along.
+  #[serde(default)]
+  pub picked: Vec<String>,
+}
+
 /// Fields to change. `None` leaves a field as is; `Some("")` clears it.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

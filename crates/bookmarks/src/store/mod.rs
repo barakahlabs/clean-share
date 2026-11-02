@@ -2,6 +2,7 @@
 
 mod list;
 mod row;
+mod suggest;
 mod tags;
 
 use std::sync::Arc;
