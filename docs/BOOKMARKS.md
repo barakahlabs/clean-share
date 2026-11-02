@@ -414,7 +414,8 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
       existing tags, most used first, filtered as you type; "Add 'xyz'" for new ones), note. Opens
       from the share screen's Save button, or directly for a "save" share. If the link is already
       saved, the same screen edits it (`bookmark_update`, `bookmark_set_tags`).
-- [ ] Detail screen (open, share, edit, delete with the confirm sheet).
+- [x] Detail screen: title, cleaned link, site and date, tags, note; Open, Share, Edit (save
+      sheet in edit mode), Delete (confirm sheet). Tapping a bookmark in the list opens it.
 - **Done when:** a YouTube, Instagram and X link can be saved from each app on both phones, appear
   cleaned in the list, and saving the same link twice shows the existing bookmark.
 
