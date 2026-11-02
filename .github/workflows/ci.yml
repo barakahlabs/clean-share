@@ -3,11 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore:
+    paths-ignore: &skip
+      # Docs and repo config don't affect the builds.
       - "docs/**"
+      - "README.md"
+      - "LICENSE"
+      - "renovate.json"
   pull_request:
-    paths-ignore:
-      - "docs/**"
+    paths-ignore: *skip
   workflow_dispatch:
 
 # One run per branch or PR: a new push cancels the run it replaces.
