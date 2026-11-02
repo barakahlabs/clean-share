@@ -2,7 +2,7 @@
 # Pinned so CI (.github/workflows/ci.yml) and every machine build with the same versions.
 node = "26"
 pnpm = "12"
-java = "corretto-21.0.3.9.1"
+java = "corretto-25.0.5+8.0.LTS"
 # Android command-line tools only; SDK packages come from `mise run android:sdk`.
 android-sdk = "23.0"
 
