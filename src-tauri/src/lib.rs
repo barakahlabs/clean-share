@@ -1,4 +1,6 @@
 mod bookmarks;
+mod previews;
+mod settings;
 
 use tauri::Manager;
 
@@ -13,9 +15,20 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_share_target::init())
+        // Thumbnails for the WebView: `convertFileSrc("<id>.jpg", "thumb")` in JS.
+        .register_asynchronous_uri_scheme_protocol("thumb", |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            let path = request.uri().path().to_string();
+            std::thread::spawn(move || {
+                responder.respond(app.state::<previews::Previews>().serve(&path));
+            });
+        })
         .setup(|app| {
             let library = bookmarks::Library::open_local(app.handle());
             app.manage(library);
+            app.manage(settings::SettingsState::load(app.handle()));
+            app.manage(previews::Previews::new(app.handle()));
+            previews::start(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -31,6 +44,10 @@ pub fn run() {
             bookmarks::tag_suggest,
             bookmarks::tag_rename,
             bookmarks::tag_delete,
+            previews::preview_fetch,
+            previews::bookmark_preview_retry,
+            settings::settings_get,
+            settings::settings_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -3,11 +3,13 @@
 use std::path::PathBuf;
 
 use ::bookmarks::{
-    Bookmark, BookmarkPatch, BookmarkTag, ListQuery, NewBookmark, Page, Prepared, Saved, Store,
-    Suggestion, TagCount, TagDraft, TagInput, db::Location,
+    Bookmark, BookmarkPatch, BookmarkTag, ListQuery, NewBookmark, Page, Prepared, PreviewStatus,
+    Saved, Store, Suggestion, TagCount, TagDraft, TagInput, db::Location,
 };
 use serde::{Serialize, Serializer};
 use tauri::{AppHandle, Manager, State, async_runtime::Mutex};
+
+use crate::{previews::Previews, settings::SettingsState};
 
 /// The bookmarks database the app is using.
 ///
@@ -16,7 +18,7 @@ use tauri::{AppHandle, Manager, State, async_runtime::Mutex};
 /// `None` means bookmarks are unavailable (the database couldn't be opened); cleaning and
 /// sharing still work.
 pub struct Library {
-    store: Mutex<Option<Store>>,
+    pub(crate) store: Mutex<Option<Store>>,
     unavailable: Option<String>,
 }
 
@@ -54,7 +56,7 @@ fn database_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 /// Errors reach JS as a plain message string.
 #[derive(Debug)]
-pub struct CommandError(String);
+pub struct CommandError(pub String);
 
 impl Serialize for CommandError {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
@@ -68,7 +70,7 @@ impl From<::bookmarks::Error> for CommandError {
     }
 }
 
-type CommandResult<T> = Result<T, CommandError>;
+pub type CommandResult<T> = Result<T, CommandError>;
 
 /// Runs `$body` (a `Store` call returning a future) with the store locked, or fails with why
 /// bookmarks are unavailable.
@@ -94,13 +96,23 @@ pub async fn bookmark_prepare(
     with_store!(library, |store| store.prepare(&text))
 }
 
-/// Saves the first link in the shared text, or merges into the existing bookmark for it.
+/// Saves the first link in the shared text, or merges into the existing bookmark for it. With
+/// previews on, a bookmark without a preview is queued for one.
 #[tauri::command]
 pub async fn bookmark_save(
     library: State<'_, Library>,
+    settings: State<'_, SettingsState>,
+    previews: State<'_, Previews>,
     bookmark: NewBookmark,
 ) -> CommandResult<Saved> {
-    with_store!(library, |store| store.save(bookmark))
+    let mut saved: Saved = with_store!(library, |store| store.save(bookmark))?;
+    if settings.get().previews && saved.bookmark.preview_status == PreviewStatus::None {
+        let id = saved.bookmark.id.clone();
+        with_store!(library, |store| store.set_preview_status(&id, PreviewStatus::Pending))?;
+        saved.bookmark.preview_status = PreviewStatus::Pending;
+        previews.wake();
+    }
+    Ok(saved)
 }
 
 /// A page of bookmarks: newest first, or by relevance when searching.
@@ -141,9 +153,16 @@ pub async fn bookmark_set_tags(
     with_store!(library, |store| store.set_tags(&id, &tags))
 }
 
+/// Deletes a bookmark and its thumbnail.
 #[tauri::command]
-pub async fn bookmark_delete(library: State<'_, Library>, id: String) -> CommandResult<()> {
-    with_store!(library, |store| store.delete(&id))
+pub async fn bookmark_delete(
+    library: State<'_, Library>,
+    previews: State<'_, Previews>,
+    id: String,
+) -> CommandResult<()> {
+    with_store!(library, |store| store.delete(&id))?;
+    previews.remove_thumbnail(&id);
+    Ok(())
 }
 
 /// Every tag with how many bookmarks use it (0 for unused tags), most used first.
@@ -153,11 +172,16 @@ pub async fn tag_list(library: State<'_, Library>) -> CommandResult<Vec<TagCount
 }
 
 /// Tags to suggest for the bookmark on the save sheet, best first (never one already picked).
+/// Uses the page's keywords and kind when the sheet already fetched its preview.
 #[tauri::command]
 pub async fn tag_suggest(
     library: State<'_, Library>,
-    draft: TagDraft,
+    previews: State<'_, Previews>,
+    mut draft: TagDraft,
 ) -> CommandResult<Vec<Suggestion>> {
+    if draft.page.is_none() {
+        draft.page = crate::previews::page_info(&previews, &draft.text);
+    }
     with_store!(library, |store| store.suggest_tags(&draft))
 }
 

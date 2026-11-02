@@ -7,7 +7,7 @@ use tag_suggest::{Content, History, MatchSuggester, Suggestion, TagSuggester, Ta
 use turso::Value;
 
 use super::{Store, row, tags, title_from};
-use crate::{Result, TagDraft, ids};
+use crate::{PageInfo, Result, TagDraft, ids};
 
 /// Chips shown on the save sheet.
 const LIMIT: usize = 5;
@@ -20,13 +20,41 @@ impl Store {
     let links = self.cleaner.links(&draft.text);
     let link = links.first();
 
-    // The text without its links (they carry tracking), the title, and the cleaned link.
+    // What the page says about itself: from the draft (a preview fetched for the save sheet),
+    // else from the stored preview when the link is already saved.
+    let page = match (&draft.page, link) {
+      (Some(page), _) => page.clone(),
+      (None, Some(link)) => match self.find_by_url(&link.cleaned).await? {
+        Some(saved) => PageInfo {
+          description: saved.description,
+          excerpt: saved.excerpt,
+          keywords: saved.keywords,
+          kind: saved.page_kind,
+        },
+        None => PageInfo::default(),
+      },
+      (None, None) => PageInfo::default(),
+    };
+
+    // The text without its links (they carry tracking), the title, the cleaned link, and the
+    // page's description and excerpt.
     let mut text = title_from(&draft.text, &links).unwrap_or_default();
-    for part in [draft.title.as_deref(), link.map(|l| l.cleaned.as_str())].into_iter().flatten() {
+    let parts = [
+      draft.title.as_deref(),
+      link.map(|l| l.cleaned.as_str()),
+      page.description.as_deref(),
+      page.excerpt.as_deref(),
+    ];
+    for part in parts.into_iter().flatten() {
       text.push(' ');
       text.push_str(part);
     }
-    let content = Content { text, provider: link.and_then(|l| l.provider.clone()) };
+    let content = Content {
+      text,
+      provider: link.and_then(|l| l.provider.clone()),
+      keywords: page.keywords,
+      kind: page.kind,
+    };
 
     // Counts leave out the bookmark itself (when editing), so it doesn't suggest its own tags.
     let this = link.map_or("", |l| l.cleaned.as_str());
