@@ -1,11 +1,12 @@
 ## Default Permission
 
-Read shared content, listen for new shares, and share text to other apps
+Read shared content, listen for new shares, share text to other apps, and return to the app that shared
 
 #### This default permission set includes the following:
 
 - `allow-get-shared`
 - `allow-share-text`
+- `allow-return-to-source`
 - `allow-register-listener`
 - `allow-remove-listener`
 
@@ -92,6 +93,32 @@ Enables the remove_listener command without any pre-configured scope.
 <td>
 
 Denies the remove_listener command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share-target:allow-return-to-source`
+
+</td>
+<td>
+
+Enables the return_to_source command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share-target:deny-return-to-source`
+
+</td>
+<td>
+
+Denies the return_to_source command without any pre-configured scope.
 
 </td>
 </tr>

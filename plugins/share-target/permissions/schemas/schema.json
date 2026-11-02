@@ -331,6 +331,18 @@
           "markdownDescription": "Denies the remove_listener command without any pre-configured scope."
         },
         {
+          "description": "Enables the return_to_source command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-return-to-source",
+          "markdownDescription": "Enables the return_to_source command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the return_to_source command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-return-to-source",
+          "markdownDescription": "Denies the return_to_source command without any pre-configured scope."
+        },
+        {
           "description": "Enables the share_text command without any pre-configured scope.",
           "type": "string",
           "const": "allow-share-text",
@@ -343,10 +355,10 @@
           "markdownDescription": "Denies the share_text command without any pre-configured scope."
         },
         {
-          "description": "Read shared content, listen for new shares, and share text to other apps\n#### This default permission set includes:\n\n- `allow-get-shared`\n- `allow-share-text`\n- `allow-register-listener`\n- `allow-remove-listener`",
+          "description": "Read shared content, listen for new shares, share text to other apps, and return to the app that shared\n#### This default permission set includes:\n\n- `allow-get-shared`\n- `allow-share-text`\n- `allow-return-to-source`\n- `allow-register-listener`\n- `allow-remove-listener`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Read shared content, listen for new shares, and share text to other apps\n#### This default permission set includes:\n\n- `allow-get-shared`\n- `allow-share-text`\n- `allow-register-listener`\n- `allow-remove-listener`"
+          "markdownDescription": "Read shared content, listen for new shares, share text to other apps, and return to the app that shared\n#### This default permission set includes:\n\n- `allow-get-shared`\n- `allow-share-text`\n- `allow-return-to-source`\n- `allow-register-listener`\n- `allow-remove-listener`"
         }
       ]
     }

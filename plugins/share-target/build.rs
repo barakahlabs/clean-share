@@ -1,4 +1,5 @@
-const COMMANDS: &[&str] = &["get_shared", "share_text", "register_listener", "remove_listener"];
+const COMMANDS: &[&str] =
+  &["get_shared", "share_text", "return_to_source", "register_listener", "remove_listener"];
 
 // Adds the app to the Android share sheet for plain text (links shared from
 // browsers arrive as text). Inserted into the app's MainActivity at build time.

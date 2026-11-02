@@ -6,6 +6,13 @@ pub struct ShareTextRequest {
   pub text: String,
 }
 
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReturnToSourceResponse {
+  /// Whether the app went back to the app that shared.
+  pub returned: bool,
+}
+
 /// Content another app shared with us. `text` is `None` when nothing is pending.
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

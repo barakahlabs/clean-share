@@ -72,6 +72,17 @@ class ShareTargetPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
 
+    // Goes back to the app that shared: the task moves to the background, which shows the app
+    // underneath it (the source app, since the share started this task or brought it forward).
+    @Command
+    fun returnToSource(invoke: Invoke) {
+        activity.runOnUiThread {
+            val result = JSObject()
+            result.put("returned", activity.moveTaskToBack(true))
+            invoke.resolve(result)
+        }
+    }
+
     @Command
     fun getShared(invoke: Invoke) {
         val result = JSObject()

@@ -15,8 +15,10 @@
 		45355B86E592B14768E5A3CD /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1486329B50FF2C46BDB00502 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		636870A1AACEE10E1BDB802F /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A4CF8F4A10CA425441C2E /* ShareViewController.swift */; };
 		6512E83F0726447B1012F2E9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3082DE3AA5BBF0CF8EB84AB2 /* Assets.xcassets */; };
+		68327A5375BC64C75D1927DB /* SaveExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7B2BDDBE47E828D4CEEB3D93 /* SaveExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7449EDB5B788FF42CDE133D4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0B9A0627931C76F056952E83 /* LaunchScreen.storyboard */; };
 		962A8AC4ADC5AC8A5B8D2971 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EEB29D2824CA0AB0507FBE2B /* Security.framework */; };
+		ABE914357400A9293AFFBB53 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A4CF8F4A10CA425441C2E /* ShareViewController.swift */; };
 		C60AD74021C5F0F3F3039FE5 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = C117ED8FD9032CBD7AA2BEA3 /* assets */; };
 		C71C96D19F46E759A9133884 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A5EDAC6E04C080172BCA550A /* UIKit.framework */; };
 		F023F058A197A0C975FCB87E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95CCD89E6B9C4701B8AB1F4F /* CoreGraphics.framework */; };
@@ -31,6 +33,13 @@
 			remoteGlobalIDString = 1527AE8A89BFD63DE18D6507;
 			remoteInfo = ShareExtension;
 		};
+		D0F37EBE8134127D9B6E050A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 089B8B8236BE12CA25CB02EA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5C7201EB1F31A49D9A6DC5BC;
+			remoteInfo = SaveExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -41,6 +50,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				45355B86E592B14768E5A3CD /* ShareExtension.appex in Embed Foundation Extensions */,
+				68327A5375BC64C75D1927DB /* SaveExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -58,14 +68,18 @@
 		3082DE3AA5BBF0CF8EB84AB2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4DE10597EC6E34611E66A114 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		6A9E24EA1707C4D577598133 /* clean-share_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "clean-share_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7783A416E6E2C854BF9D0220 /* SaveExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SaveExtension.entitlements; sourceTree = "<group>"; };
 		77EDC85D9F2A6D05288ADC93 /* clean-share_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "clean-share_iOS.entitlements"; sourceTree = "<group>"; };
 		7A3B225E98DF7371B8F3C750 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		7B2BDDBE47E828D4CEEB3D93 /* SaveExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SaveExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8545AB2EC416756C3FC36BBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		95CCD89E6B9C4701B8AB1F4F /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		9AA8145730AA3D8A7A4CEBF5 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		9BE4823B60D2B4525EB31606 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		A5EDAC6E04C080172BCA550A /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		B281E56082AEB889AC1EA190 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C117ED8FD9032CBD7AA2BEA3 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+		C7BCE0B1EDD9E1D6A15B92E9 /* bookmarks.rs */ = {isa = PBXFileReference; path = bookmarks.rs; sourceTree = "<group>"; };
 		C9C54AF9E975DAE7C3529A67 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
 		D7AA1E7356111CE423717043 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		EE9A357C51AB73EF91762914 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
@@ -95,6 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				6A9E24EA1707C4D577598133 /* clean-share_iOS.app */,
+				7B2BDDBE47E828D4CEEB3D93 /* SaveExtension.appex */,
 				1486329B50FF2C46BDB00502 /* ShareExtension.appex */,
 			);
 			name = Products;
@@ -150,6 +165,7 @@
 		8AE946927EAA1833FFA93058 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				C7BCE0B1EDD9E1D6A15B92E9 /* bookmarks.rs */,
 				186EAE92E3E2299E68E61AB5 /* lib.rs */,
 				EE9A357C51AB73EF91762914 /* main.rs */,
 			);
@@ -166,6 +182,15 @@
 			path = "clean-share_iOS";
 			sourceTree = "<group>";
 		};
+		9C4F2267D6D4475853B1AC63 /* SaveExtension */ = {
+			isa = PBXGroup;
+			children = (
+				B281E56082AEB889AC1EA190 /* Info.plist */,
+				7783A416E6E2C854BF9D0220 /* SaveExtension.entitlements */,
+			);
+			path = SaveExtension;
+			sourceTree = "<group>";
+		};
 		F5922F0580BA0F396B4C1F6D = {
 			isa = PBXGroup;
 			children = (
@@ -174,6 +199,7 @@
 				0B9A0627931C76F056952E83 /* LaunchScreen.storyboard */,
 				8AE949E362BA4580B6F02B34 /* clean-share_iOS */,
 				06D60BF164F7EC5B102845FA /* Externals */,
+				9C4F2267D6D4475853B1AC63 /* SaveExtension */,
 				FB289D17448472AED241D88A /* ShareExtension */,
 				32E1E986115E5F95A60B94ED /* Sources */,
 				8AE946927EAA1833FFA93058 /* src */,
@@ -190,6 +216,20 @@
 				285A4CF8F4A10CA425441C2E /* ShareViewController.swift */,
 			);
 			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		"TEMP_44634034-EA35-4815-8C6E-D23FB8953994" /* x86_64 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = x86_64;
+			sourceTree = "<group>";
+		};
+		"TEMP_B9994C0C-D97D-439B-B500-B8CA370B7D92" /* arm64 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = arm64;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -212,6 +252,23 @@
 			productReference = 1486329B50FF2C46BDB00502 /* ShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		5C7201EB1F31A49D9A6DC5BC /* SaveExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 787AEDD3DD250D8694F76FFF /* Build configuration list for PBXNativeTarget "SaveExtension" */;
+			buildPhases = (
+				95589B6C3A9A6D320DE0D1EC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SaveExtension;
+			packageProductDependencies = (
+			);
+			productName = SaveExtension;
+			productReference = 7B2BDDBE47E828D4CEEB3D93 /* SaveExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		D4D30ADED98D960CD916538F /* clean-share_iOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 33D702F393F136B0B7C0DC04 /* Build configuration list for PBXNativeTarget "clean-share_iOS" */;
@@ -226,6 +283,7 @@
 			);
 			dependencies = (
 				A36A2B5CA4EAD54CBE2E6B8B /* PBXTargetDependency */,
+				0E6BA91A9655E135192C1FBE /* PBXTargetDependency */,
 			);
 			name = "clean-share_iOS";
 			packageProductDependencies = (
@@ -244,6 +302,10 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					1527AE8A89BFD63DE18D6507 = {
+						DevelopmentTeam = Z22387358W;
+						ProvisioningStyle = Automatic;
+					};
+					5C7201EB1F31A49D9A6DC5BC = {
 						DevelopmentTeam = Z22387358W;
 						ProvisioningStyle = Automatic;
 					};
@@ -269,6 +331,7 @@
 			targets = (
 				D4D30ADED98D960CD916538F /* clean-share_iOS */,
 				1527AE8A89BFD63DE18D6507 /* ShareExtension */,
+				5C7201EB1F31A49D9A6DC5BC /* SaveExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -319,6 +382,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		95589B6C3A9A6D320DE0D1EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ABE914357400A9293AFFBB53 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CCF583EF4BE2ACDF552DCEA4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -330,6 +401,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0E6BA91A9655E135192C1FBE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5C7201EB1F31A49D9A6DC5BC /* SaveExtension */;
+			targetProxy = D0F37EBE8134127D9B6E050A /* PBXContainerItemProxy */;
+		};
 		A36A2B5CA4EAD54CBE2E6B8B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 1527AE8A89BFD63DE18D6507 /* ShareExtension */;
@@ -485,6 +561,24 @@
 			};
 			name = release;
 		};
+		96A0A32DD734758C79D5121F /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SaveExtension/SaveExtension.entitlements;
+				INFOPLIST_FILE = SaveExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sirajulm.cleanshare.SaveExtension;
+				PRODUCT_NAME = SaveExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = release;
+		};
 		9C4BFF134E87BBF6C64A732B /* release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -543,6 +637,24 @@
 			};
 			name = release;
 		};
+		A5E9E32CF0CB4D66D3940077 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SaveExtension/SaveExtension.entitlements;
+				INFOPLIST_FILE = SaveExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sirajulm.cleanshare.SaveExtension;
+				PRODUCT_NAME = SaveExtension;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = debug;
+		};
 		F306DE6BF1C1EE1C807EBBFE /* release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -578,6 +690,15 @@
 			buildConfigurations = (
 				5860463D9A0665AA8161ABEF /* debug */,
 				9C4BFF134E87BBF6C64A732B /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		787AEDD3DD250D8694F76FFF /* Build configuration list for PBXNativeTarget "SaveExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A5E9E32CF0CB4D66D3940077 /* debug */,
+				96A0A32DD734758C79D5121F /* release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = debug;
