@@ -21,7 +21,7 @@ in priority order within each section.
       and button restyle (→ new `share-icon` branch).
 - [ ] Push the stacked branches and open linked PRs (`but pr new <top-branch> -t`).
 - [x] CI (GitHub Actions on [Blacksmith](https://docs.blacksmith.sh) runners,
-      `.github/workflows/ci.yml`) on every PR and push to `main`, skipping docs-only changes:
+      `.github/workflows/ci.yml`) on every PR and push to `main`, skipping changes that only touch docs, `README.md`, `LICENSE` or `renovate.json`:
   - Rust: `cargo clippy -D warnings` + `cargo test` for each crate in `crates/`
   - `cargo run -- check` in `crates/rules-tool` (rules valid, tests pass, generated files current)
   - `pnpm build` (TypeScript + Vite), as part of the Android build (the separate `web` job is
