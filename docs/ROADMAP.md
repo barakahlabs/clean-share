@@ -4,22 +4,21 @@ Clean Share receives links shared from other apps, highlights tracking parameter
 shares the cleaned link onwards. This file lists what's done and the possible next steps, roughly
 in priority order within each section.
 
-## Where things stand (October 2026)
+## Where things stand (November 2026)
 
 | Area | State |
 |---|---|
-| App shell | Tauri 2 + React (TypeScript), pnpm via mise |
-| Receive shares | Android: tested on emulator. iOS: Share Extension builds, **not yet run** |
-| Share onwards | Android: tested. iOS: builds, not yet run |
-| Tracking removal | Rust (`crates/link-cleaner`), rules in typed TOML files (`rules/`), 9 platforms, 20 rule tests |
+| App shell | Tauri 2 + React (TypeScript); tools pinned in `mise.toml`; Bookmarks and Settings tabs |
+| Share entries | *Clean & Share* and *Save bookmark*, on Android (activity alias) and iOS (two share extensions, App Group); tested on the emulator and on an iPhone 13 Pro |
+| Tracking removal | Rust (`crates/link-cleaner`), typed TOML rules (`rules/`), 9 providers + global rules, 23 rule tests |
 | Rule tooling | `crates/rules-tool`: `check`, `generate` (schemas + README tables), `bundle` |
-| Branches | `tauri-scaffold` → `share-target` → `link-cleaner` → `rules-schema` (stacked, not pushed) |
+| Bookmarks | Phases 0–3, 5 and 7 done (see [Bookmarks](#bookmarks)); AI tagging, re-cleaning and sync open |
+| CI | Blacksmith: Rust crates + Android APK on every PR; iOS simulator build by hand |
+| Dependencies | Renovate, grouped (Android, toolchain, Tauri); presets copied from `barakahlabs/configs` |
 
-## 1. Housekeeping (next up)
+## 1. Housekeeping
 
-- [ ] Commit pending work: ClearURLs reference in `rules/README.md` (→ `rules-schema`), share icon
-      and button restyle (→ new `share-icon` branch).
-- [ ] Push the stacked branches and open linked PRs (`but pr new <top-branch> -t`).
+- [x] Commit and push the first stacked branches (scaffold, share target, cleaner, rules schema).
 - [x] CI (GitHub Actions on [Blacksmith](https://docs.blacksmith.sh) runners,
       `.github/workflows/ci.yml`) on every PR and push to `main`, skipping changes that only touch docs, `README.md`, `LICENSE` or `renovate.json`:
   - Rust: `cargo clippy -D warnings` + `cargo test` for each crate in `crates/`
@@ -43,20 +42,24 @@ in priority order within each section.
       build releases on the Mac.
 - [ ] `plugins/share-target`: no Rust tests yet; it's compiled by the Android job. Testing it on
       Linux needs Tauri's system packages (`libwebkit2gtk-4.1-dev` and others).
-- [ ] Root `README.md`: replace the Tauri template text with what the app does and how to run it
-      (mise, pnpm, `tauri android dev --open`, `tauri ios dev --open`).
+- [x] Root `README.md`: what the app does, layout, setup, run, test, CI.
+- Note on stacked PRs: GitHub's own rebase of a stack after a merge can produce unsigned
+  commits. After each merge, update locally (`but pull`) and push the rest before merging the
+  next one.
 
 ## 2. Verify iOS end to end
 
-- [ ] Update Xcode and install the matching iOS simulator runtime.
-- [ ] Run on the simulator: share from Safari → Clean Share opens with the link → tracking shown →
-      Share opens the iOS share sheet with the cleaned link.
-- [ ] Run on a real iPhone: set the development team for both targets (`clean-share_iOS`,
-      `ShareExtension`) so the App Group `group.com.sirajulm.cleanshare` works.
-- [ ] Confirm the Share Extension can still open the app on the current iOS version. If Apple blocks
-      it, fall back to a small confirmation UI in the extension ("Saved, open Clean Share").
-- [ ] Decide whether the extension should hide itself from our own share sheet (it currently appears
-      there, iOS doesn't allow excluding it).
+- [x] Run on the simulator: share → Clean Share opens with the link → tracking shown → Share
+      opens the iOS share sheet with the cleaned link.
+- [x] Run on a real iPhone (13 Pro): development team set for the app and both extensions
+      (`ShareExtension`, `SaveExtension`), so the App Group `group.com.sirajulm.cleanshare` works;
+      Save bookmark works from other apps.
+- [x] The share extensions still open the app on the current iOS version.
+- [ ] Decide whether the extensions should hide themselves from our own share sheet (they appear
+      there; iOS doesn't allow excluding them).
+- [ ] YouTube inline on iOS: the embedded player fails there (no `https` referrer from
+      `tauri://localhost`), so it opens the YouTube app. Backlog: a native player sheet
+      ([bookmarks phase 5](BOOKMARKS.md)).
 
 ## 3. Hosted rules (update rules without an app release)
 
@@ -118,12 +121,24 @@ Open question: is an iOS Action extension worth a second entry next to the Share
 
 ### Bookmarks
 
-Save shared links with tags, inside this app, local-only to start. Plan and data model:
+Save shared links with tags, inside this app, local-only. Plan, data model and phase details:
 [`docs/BOOKMARKS.md`](BOOKMARKS.md).
 
-- [ ] Phase 1: "Save bookmark" share entry (Android), SQLite storage, list screen.
-- [ ] Phase 2: tags and search.
-- [ ] Phase 3: iOS share extension support.
+- [x] Phase 0–1: storage on Turso (`crates/bookmarks`, migrations), "Save bookmark" share entry on
+      Android and iOS, save sheet, list and detail screens.
+- [x] Phase 2: tags (Settings → Tags), search as you type, tag filters, tag suggestions
+      (`crates/tag-suggest`).
+- [x] Phase 3: link previews (`crates/link-preview`): opt-in, optionally Wi-Fi only; thumbnails
+      and site icons on the phone; grid of cards.
+- [x] Phase 5: tap-to-play players (YouTube, Vimeo, Spotify, X, TikTok, SoundCloud).
+- [x] Phase 7: export (JSON backup, browser HTML) and import (backups, browser bookmarks, Pocket,
+      Raindrop).
+- [ ] Phase 4: AI tagging. On-device AI needs a newer phone (Apple Intelligence: iPhone 15 Pro+;
+      Gemini Nano: recent Pixels/Samsungs). First, keyword suggestions from the page text, which
+      work on every phone.
+- [ ] Phase 6: re-clean saved links when the rules change, with a report.
+- [ ] Phase 8: accounts and paid sync (one Turso database per user).
+- [ ] Faster big imports: one transaction instead of one save per bookmark.
 
 ## 6. Design and polish
 
@@ -131,6 +146,8 @@ Save shared links with tags, inside this app, local-only to start. Plan and data
 - [ ] Review light/dark mode, font scaling, screen readers (VoiceOver / TalkBack labels for the
       highlighted parts, e.g. "tracking: si=…").
 - [ ] Empty state with a short "how to use" illustration.
+- [x] Bookmarks as a grid of cards (two per row on a phone), with site icons or initials as the
+      fallback picture; pull-down no longer drags the tab bar.
 - [ ] Localization (start with English; structure strings for translation).
 
 ## 7. Release
@@ -139,7 +156,9 @@ Save shared links with tags, inside this app, local-only to start. Plan and data
       (`pnpm tauri android build`), Play Console listing, internal testing track.
 - [ ] iOS: App Store Connect app, bundle IDs for the app and the extension, App Group capability,
       TestFlight.
-- [ ] Privacy policy: no data collected; the only network request is the rules download.
+- [ ] Privacy policy: no data collected. Network requests: link previews (off by default; each
+      saved link is fetched once with an honest user agent, no cookies), players (only when Play
+      is tapped), and the rules download once hosted rules exist.
 - [ ] Versioning: app version in `tauri.conf.json`; rules versioned separately by `revision`.
 - [ ] Desktop (optional): the cleaner works on desktop already; a tray / clipboard cleaner could
       reuse it.
@@ -148,11 +167,16 @@ Save shared links with tags, inside this app, local-only to start. Plan and data
 
 - [ ] Cargo workspace at the repo root (one `Cargo.lock`, shared `target/`) for `src-tauri`,
       `crates/*` and `plugins/share-target`, after checking Tauri's mobile builds handle it.
-- [ ] Generated native projects are hand-edited (`src-tauri/gen/apple/project.yml` adds the Share
-      Extension). Document this, and never run `tauri ios init` again without re-applying it.
+- [ ] Generated native projects are hand-edited. Document this, and never run `tauri ios init` or
+      `tauri android init` again without re-applying:
+  - iOS: `src-tauri/gen/apple/project.yml` adds the two share extensions (`ShareExtension`,
+    `SaveExtension`) and the App Group.
+  - Android: the "Save bookmark" activity alias and its string (`AndroidManifest.xml`,
+    `strings.xml`); `MainActivity.kt` pads content by the keyboard's height and turns off the
+    WebView's overscroll stretch.
 - [ ] Android app module still targets Java 8 (Tauri default); move to 17 like the plugin.
 - [ ] Two Android SDKs on this machine (mise-managed and `~/Library/Android/sdk` with the
       emulator image). Consolidate on the mise one: install `emulator` and a system image there.
 - [ ] `NDK_HOME` in `mise.toml` is a full path tied to the mise android-sdk version; update it when
       that version changes.
-- [ ] Android Studio must support the AGP version Tauri generates (currently 9.3.1).
+- [ ] Android Studio must support the Android Gradle plugin version in use (now 9.5.0).
