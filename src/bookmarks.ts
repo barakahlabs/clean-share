@@ -73,8 +73,9 @@ export type Page<T> = { items: T[]; next: string | null };
 export type TagDraft = { text: string; title?: string | null; picked: string[] };
 
 /** Why a tag was suggested: named in the content, used on the same site, used together with a
- * picked tag, or from the built-in provider map (YouTube → video). */
-export type SuggestionReason = "content" | "site" | "related" | "provider";
+ * picked tag, from the built-in provider map (YouTube → video), from the page's own keywords or
+ * kind, or a keyword picked from its text. */
+export type SuggestionReason = "content" | "site" | "related" | "provider" | "page" | "text";
 export type Suggestion = { name: string; reason: SuggestionReason; score: number };
 
 export function prepareBookmark(text: string): Promise<Prepared> {
