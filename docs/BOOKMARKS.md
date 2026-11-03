@@ -130,8 +130,9 @@ Paid sync only (phase 8):
 
 ## Data model
 
-Schema v1 lives in `crates/bookmarks/migrations/0001_init.sql`; this is a summary. Created with all columns,
-so later phases only fill them in. Migrations use `PRAGMA user_version`. Each phone migrates its own
+Schema v1 lives in `crates/bookmarks/migrations/0001_init.sql`, v2 (`0002_previews.sql`) adds
+the rest of what previews find; this is a summary. v1 was created with most columns, so later
+phases mostly fill them in. Migrations use `PRAGMA user_version`. Each phone migrates its own
 database on open, so there is never a server job that migrates every user's database. A database
 with a newer version than the app knows (e.g. synced from a phone with a newer app) is refused with
 "update the app" instead of being opened.
@@ -157,7 +158,13 @@ bookmark
   description         text                   phase 3: og:description / meta description
   image_url           text                   phase 3: og:image (cleaned)
   embed_kind          text                   phase 5: "youtube" | "x" | … (null = no embed)
-  embed_url           text                   phase 5: URL the embed loads from
+  embed_url           text                   phase 5: URL the embed loads from (cleaned)
+  page_kind           text                   v2: "recipe" | "article" | "video" | … (JSON-LD / og:type)
+  keywords            text not null          v2: the page's keywords, one per line ('' = none)
+  author              text                   v2
+  published           text                   v2: publish date as the page gives it
+  icon_url            text                   v2: site icon (cleaned)
+  excerpt             text                   v2: start of the page's text (≤ 1000 chars)
   preview_status      text not null          "none" | "pending" | "done" | "failed"
   preview_fetched_at  integer
   rules_revision      text not null          rules revision used to clean `url`
@@ -183,7 +190,12 @@ bookmark_search       full-text index on bookmark (ngram tokenizer)
 setting               not yet: added by a migration when the first synced preference exists
 ```
 
-- **Thumbnails** (phase 3) are files named after the bookmark ID in the app data dir, not a column.
+- **Thumbnails** (phase 3) are files named after the bookmark ID in the app data dir
+  (`thumbnails/<id>.jpg`, ≤ 400 px, JPEG), not a column. The WebView loads them on the `thumb`
+  URI scheme. Deleting a bookmark deletes its thumbnail.
+- **Preview queue:** `preview_status = 'pending'` rows, newest first (index
+  `bookmark_preview_queue`). Saving with previews on queues the bookmark; switching previews on
+  queues every `none`; failed ones are retried one at a time from the detail screen.
 - **Tags:** names are trimmed, a leading `#` is dropped, and inner spaces collapse (`" #Rust  lang"`
   → `Rust lang`). Tags stay when no bookmark uses them any more (count 0); Settings → Tags lists every tag with its count, so the user decides what to delete. Renaming moves
   bookmarks to the tag with the new name (merging if it exists), because the ID follows the name.
@@ -264,8 +276,9 @@ stay in `shared_text` (the save screen shows a picker when there is more than on
 | `bookmark_get` / `bookmark_update` / `bookmark_delete` | id (+ patch) | bookmark / – |
 | `tag_list` / `tag_rename` / `tag_delete` | – / names | tags with counts |
 | `tag_suggest` | draft: `text`, `title`, `picked` tags | `[{ name, reason, score }]`, best first |
-| `settings_get` / `settings_set` | key / value | – |
-| `preview_fetch` (phase 3) | id | updated bookmark (runs in the background, emits an event) |
+| `settings_get` / `settings_set` | – / `{ previews }` | settings (`settings.json` in the app data dir; device-only) |
+| `preview_fetch` | shared `text` | the preview for its first link, or `null` with previews off; kept for the worker and for `tag_suggest` |
+| `bookmark_preview_retry` | id | – (queues it; the worker emits `bookmark-preview` with the id when done or failed) |
 
 The database is opened once at startup in `app.path().app_data_dir()/bookmarks.db` and kept in
 Tauri state behind a `Mutex`. With sync on (phase 8), it is opened in sync mode instead, with the
@@ -346,6 +359,11 @@ in). Each reason adds to a tag's score:
 - **Provider** (1): a small built-in map, e.g. youtube/tiktok → `video`, spotify → `music`,
   instagram/x/threads/facebook → `social`. Suggested even if the tag doesn't exist yet (accepting
   it creates it); an existing tag with the same singular form is used instead.
+- **Page** (with a preview, phase 3): a page keyword matching an existing tag (2.5); up to 3
+  short keywords offered as new tags (0.75 each: ≤ 3 words, ≤ 25 characters, not just digits); and
+  the page kind as a tag (1): recipe, video, music, podcast, book, movie, event, product →
+  `shopping`. The page's description and excerpt also count as content. The save sheet's fetched
+  preview is used before saving; a saved bookmark's stored preview when editing.
 - "Share" is the fraction of that group's bookmarks with the tag, from the newest 500 at most. The
   bookmark being edited is left out of both groups.
 - Ranked by score, then by how often the tag is used, then by name; top 5 shown as chips under the
@@ -460,12 +478,14 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 - **Done when:** search finds by any word in title/note/tags; suggestions appear for repeat sites.
 
 ### Phase 3 – Preview cards
-- [ ] Settings screen + `previews_enabled`.
+- [x] `previews` setting (backend: `settings_get` / `settings_set`).
+- [ ] Settings screen switch.
 - [x] `crates/link-preview`: oEmbed (no-key providers + discovery), Open Graph, JSON-LD, keywords,
       kind, excerpt, icons, limits, fixtures and local-server tests.
-- [ ] Migration: keywords, kind, excerpt (description, image, site name already have columns).
-- [ ] Background fetch queue, thumbnail cache, `preview_status`, retry.
-- [ ] Page keywords and kind feed tag suggestions.
+- [x] Migration: keywords, kind, excerpt, author, published, icon (description, image, site name
+      already had columns).
+- [x] Background fetch queue, thumbnail cache, `preview_status`, retry command.
+- [x] Page keywords, kind, description and excerpt feed tag suggestions (new `page` reason).
 - [ ] Cards in list and detail; description added to FTS and to tag suggestions.
 - **Done when:** with previews on, YouTube and article links show title + thumbnail offline after
   saving; with previews off, no request is made (checked with a proxy).

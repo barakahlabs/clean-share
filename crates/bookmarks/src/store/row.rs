@@ -7,7 +7,7 @@ use crate::{Bookmark, Error, PreviewStatus, Result, TagSource};
 /// Column order read by [`bookmark`].
 pub const BOOKMARK_COLUMNS: &str = "id, url, original_url, title, note, shared_text, provider, \
   site_name, description, image_url, embed_kind, embed_url, preview_status, preview_fetched_at, \
-  rules_revision, created_at, updated_at";
+  rules_revision, created_at, updated_at, page_kind, keywords, author, published, icon_url, excerpt";
 
 /// A bookmark without its tags (loaded separately).
 pub fn bookmark(row: &Row) -> Result<Bookmark> {
@@ -24,6 +24,12 @@ pub fn bookmark(row: &Row) -> Result<Bookmark> {
     image_url: opt_text(row, 9, "image_url")?,
     embed_kind: opt_text(row, 10, "embed_kind")?,
     embed_url: opt_text(row, 11, "embed_url")?,
+    page_kind: opt_text(row, 17, "page_kind")?,
+    keywords: text(row, 18, "keywords")?.lines().map(str::to_string).collect(),
+    author: opt_text(row, 19, "author")?,
+    published: opt_text(row, 20, "published")?,
+    icon_url: opt_text(row, 21, "icon_url")?,
+    excerpt: opt_text(row, 22, "excerpt")?,
     preview_status: preview_status(&text(row, 12, "preview_status")?)?,
     preview_fetched_at: opt_int(row, 13, "preview_fetched_at")?,
     rules_revision: text(row, 14, "rules_revision")?,
@@ -65,6 +71,15 @@ fn preview_status(value: &str) -> Result<PreviewStatus> {
     "failed" => PreviewStatus::Failed,
     _ => return Err(Error::BadColumn { column: "preview_status" }),
   })
+}
+
+pub fn preview_status_str(status: PreviewStatus) -> &'static str {
+  match status {
+    PreviewStatus::None => "none",
+    PreviewStatus::Pending => "pending",
+    PreviewStatus::Done => "done",
+    PreviewStatus::Failed => "failed",
+  }
 }
 
 pub fn tag_source(value: &str) -> TagSource {

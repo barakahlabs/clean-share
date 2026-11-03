@@ -19,6 +19,14 @@ pub struct Bookmark {
   pub image_url: Option<String>,
   pub embed_kind: Option<String>,
   pub embed_url: Option<String>,
+  /// The rest of the preview (schema v2): what the page is (`recipe`, `article`, `video`…), its
+  /// declared keywords, author, publish date, icon, and the start of its text.
+  pub page_kind: Option<String>,
+  pub keywords: Vec<String>,
+  pub author: Option<String>,
+  pub published: Option<String>,
+  pub icon_url: Option<String>,
+  pub excerpt: Option<String>,
   pub preview_status: PreviewStatus,
   pub preview_fetched_at: Option<i64>,
   /// Rules revision used to clean `url`.
@@ -117,6 +125,41 @@ pub struct TagDraft {
   /// Tags already on it. They're never suggested, and they bring related tags along.
   #[serde(default)]
   pub picked: Vec<String>,
+  /// The page's own description, keywords and kind, if a preview was fetched. When it's `None`
+  /// and the link is already saved, the stored preview is used.
+  #[serde(default)]
+  pub page: Option<PageInfo>,
+}
+
+/// What a link preview found, to store on a bookmark. The caller fetches it (the app uses
+/// `crates/link-preview`) and cleans the image, icon and embed links first.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewData {
+  /// Used as the bookmark's title only if it has none.
+  pub title: Option<String>,
+  pub description: Option<String>,
+  pub site_name: Option<String>,
+  pub image_url: Option<String>,
+  pub icon_url: Option<String>,
+  pub author: Option<String>,
+  pub page_kind: Option<String>,
+  pub keywords: Vec<String>,
+  pub published: Option<String>,
+  pub excerpt: Option<String>,
+  pub embed_kind: Option<String>,
+  pub embed_url: Option<String>,
+}
+
+/// What a page says about itself, for tag suggestions: from a stored preview, or one fetched for
+/// the save sheet before saving.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PageInfo {
+  pub description: Option<String>,
+  pub excerpt: Option<String>,
+  pub keywords: Vec<String>,
+  pub kind: Option<String>,
 }
 
 /// Fields to change. `None` leaves a field as is; `Some("")` clears it.
