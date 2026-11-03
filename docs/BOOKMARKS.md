@@ -529,6 +529,14 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
   a play button and "Plays from YouTube". The iframe is sandboxed (scripts, same origin,
   presentation, popups; no top navigation), can autoplay and go fullscreen. Cards that can play
   get a ▶ badge in the grid.
+- **YouTube on iOS opens in the YouTube app** ("Opens in YouTube"): iOS serves the app from
+  `tauri://localhost`, so the embedded player gets no `https` referrer and YouTube refuses it
+  (error 153). An iframe can't fix that (`srcdoc` and `data:` pages send no referrer either, and
+  iOS doesn't let an app serve `https` addresses). Android, and the other sites on iOS, play
+  inline.
+- [ ] Backlog: YouTube inline on iOS with a native player sheet: the share-target plugin opens a
+      WKWebView that loads the player from an HTML string with an `https` base URL (e.g.
+      `https://com.sirajulm.cleanshare`, never fetched), so YouTube gets a referrer.
 
 ### Phase 6 – Organize
 - [ ] Edit screen; `reclean_all` on rules updates with a report. (Tag management moved to
