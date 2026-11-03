@@ -40,6 +40,12 @@ impl<R: Runtime> ShareTarget<R> {
       .map_err(Into::into)
   }
 
+  /// Opens the share sheet with a file. On Android it must be in the app's cache dir (the
+  /// template FileProvider's paths).
+  pub fn share_file(&self, payload: ShareFileRequest) -> crate::Result<()> {
+    self.0.run_mobile_plugin("shareFile", payload).map_err(Into::into)
+  }
+
   /// Whether the phone's current connection is metered (mobile data, a hotspot, Low Data
   /// Mode) or there's none.
   pub fn is_metered(&self) -> crate::Result<bool> {
