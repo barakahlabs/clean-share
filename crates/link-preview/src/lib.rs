@@ -24,6 +24,7 @@ mod fetch;
 mod guard;
 mod html;
 pub mod oembed;
+mod thumbnail;
 
 use std::time::Duration;
 
@@ -31,6 +32,7 @@ use serde::{Deserialize, Serialize};
 
 pub use fetch::{Fetcher, Image};
 pub use html::{Page, parse_html};
+pub use thumbnail::{THUMBNAIL_SIZE, thumbnail};
 
 /// What a link points to, as far as the preview sources say. Every field is optional: sites
 /// differ a lot in what they provide.
@@ -135,6 +137,8 @@ pub enum Error {
   Network(String),
   #[error("invalid oEmbed response: {0}")]
   OEmbed(String),
+  #[error("can't read the image: {0}")]
+  BadImage(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

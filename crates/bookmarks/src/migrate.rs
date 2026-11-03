@@ -15,7 +15,10 @@ use turso::{
 use crate::{Error, Result};
 
 /// In order: migration `i` takes the schema from version `i` to `i + 1`.
-const MIGRATIONS: &[(&str, &str)] = &[("0001_init", include_str!("../migrations/0001_init.sql"))];
+const MIGRATIONS: &[(&str, &str)] = &[
+  ("0001_init", include_str!("../migrations/0001_init.sql")),
+  ("0002_previews", include_str!("../migrations/0002_previews.sql")),
+];
 
 /// The schema version this build creates and understands.
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;
