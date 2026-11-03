@@ -458,8 +458,12 @@ async fn suggests_existing_tags_named_in_the_text_and_title() {
 
   let mut d = draft("Async Rust in practice https://b.example/post", &[]);
   d.title = Some("Weeknight recipe ideas".into());
-  // Same score and uses: by name.
-  assert_eq!(suggested(&store, &d).await, [("recipes".into(), Content), ("Rust".into(), Content)]);
+  // Same score and uses: by name. Then a keyword from the title, after the existing tags ("recipe
+  // ideas" would overlap `recipes`, so it isn't offered).
+  assert_eq!(
+    suggested(&store, &d).await,
+    [("recipes".into(), Content), ("Rust".into(), Content), ("weeknight".into(), Text)]
+  );
 }
 
 #[tokio::test]

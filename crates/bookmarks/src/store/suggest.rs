@@ -38,7 +38,8 @@ impl Store {
 
     // The text without its links (they carry tracking), the title, the cleaned link, and the
     // page's description and excerpt.
-    let mut text = title_from(&draft.text, &links).unwrap_or_default();
+    let shared = title_from(&draft.text, &links).unwrap_or_default();
+    let mut text = shared.clone();
     let parts = [
       draft.title.as_deref(),
       link.map(|l| l.cleaned.as_str()),
@@ -49,11 +50,17 @@ impl Store {
       text.push(' ');
       text.push_str(part);
     }
+    let summary =
+      [page.description.as_deref(), page.excerpt.as_deref()].into_iter().flatten().collect::<Vec<_>>().join(" ");
     let content = Content {
       text,
       provider: link.and_then(|l| l.provider.clone()),
       keywords: page.keywords,
       kind: page.kind,
+      title: draft.title.clone().unwrap_or_default(),
+      summary,
+      shared,
+      host: link.and_then(|l| host_of(&l.cleaned)),
     };
 
     // Counts leave out the bookmark itself (when editing), so it doesn't suggest its own tags.

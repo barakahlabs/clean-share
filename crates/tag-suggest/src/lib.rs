@@ -6,7 +6,7 @@
 //! test, and later ones (on-device or cloud AI, `docs/BOOKMARKS.md` "Tagging") fit the same
 //! trait.
 //!
-//! [`MatchSuggester`] is tier 1: offline, on every phone. It combines five reasons:
+//! [`MatchSuggester`] is tier 1: offline, on every phone. It combines six reasons:
 //!
 //! - [`Reason::Content`]: an existing tag whose name appears in the title, text or link
 //!   (`video` also matches "videos").
@@ -16,7 +16,10 @@
 //! - [`Reason::Page`]: what the page says about itself in its preview: its declared keywords
 //!   (an existing tag that matches one ranks high; a few others are offered as new tags, if the
 //!   page's text uses those words) and its kind (a recipe page suggests `recipe`).
+//! - [`Reason::Text`]: keywords picked from the title and text ([`keywords`]), for pages that
+//!   declare few or none; ranked below everything else, so they only fill gaps.
 
+pub mod keywords;
 mod words;
 
 use std::collections::HashMap;
@@ -35,6 +38,13 @@ pub struct Content {
   pub keywords: Vec<String>,
   /// What the page is, from its preview: `recipe`, `article`, `video`…
   pub kind: Option<String>,
+  /// The readable text by where it's from, for keywords from the text ([`Reason::Text`]): the
+  /// title, the page's description and excerpt, and the text that came with the share.
+  pub title: String,
+  pub summary: String,
+  pub shared: String,
+  /// The link's host, so the site's own name isn't a keyword.
+  pub host: Option<String>,
 }
 
 /// How the user has tagged so far. `site` and `related` leave out the bookmark being tagged.
@@ -72,6 +82,9 @@ pub enum Reason {
   Related,
   Provider,
   Page,
+  /// A keyword picked from the page's text (title, description, excerpt), for pages that
+  /// declare none.
+  Text,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -114,6 +127,10 @@ const PAGE_MATCH: f32 = 2.5;
 const PAGE_NEW: f32 = 0.75;
 const PAGE_NEW_MAX: usize = 3;
 const PAGE_KIND: f32 = 1.0;
+/// Keywords from the text: below the page's own keywords, so they fill gaps. The best gets
+/// `TEXT`, the next ones a little less.
+const TEXT: f32 = 0.6;
+const TEXT_MAX: usize = 2;
 
 /// Provider id (from the cleaning rules) → tag. Kept short and generic on purpose.
 const PROVIDER_TAGS: &[(&str, &str)] = &[
@@ -180,6 +197,21 @@ impl TagSuggester for MatchSuggester {
         new_keywords += 1;
       }
     }
+    // From the text, when the page declares no keywords of its own (or only a few usable ones).
+    if new_keywords < PAGE_NEW_MAX {
+      let fields = [
+        keywords::Field { text: &content.title, weight: 3.0 },
+        keywords::Field { text: &content.summary, weight: 2.0 },
+        keywords::Field { text: &content.shared, weight: 1.0 },
+      ];
+      for (i, (keyword, _)) in keywords::pick(&fields, content.host.as_deref(), TEXT_MAX).iter().enumerate() {
+        // An existing tag found this way is already a content match, and one that shares a word
+        // with a tag already suggested ("recipe ideas" next to `recipes`) adds nothing.
+        if !ranking.is_known(keyword) && !ranking.overlaps(keyword) {
+          ranking.add(keyword, Reason::Text, TEXT - 0.05 * i as f32);
+        }
+      }
+    }
     if let Some(kind) = content.kind.as_deref() {
       for (_, tag) in KIND_TAGS.iter().filter(|(k, _)| *k == kind) {
         ranking.add(tag, Reason::Page, PAGE_KIND);
@@ -223,6 +255,12 @@ impl<'a> Ranking<'a> {
 
   fn is_known(&self, name: &str) -> bool {
     self.known.contains_key(&words::key(name))
+  }
+
+  /// True if `name` shares a word with a tag already suggested.
+  fn overlaps(&self, name: &str) -> bool {
+    let key = words::key(name);
+    self.scores.keys().any(|k| k.split(' ').any(|w| key.split(' ').any(|n| n == w)))
   }
 
   fn add(&mut self, name: &str, reason: Reason, score: f32) {
