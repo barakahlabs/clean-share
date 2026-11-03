@@ -88,3 +88,11 @@
 .settings-switch:checked::after {
   transform: translateX(20px);
 }
+
+.settings-row:disabled {
+  opacity: 0.5;
+}
+
+.transfer-report {
+  color: var(--text);
+}

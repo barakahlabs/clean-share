@@ -600,3 +600,100 @@ async fn a_failed_retry_keeps_the_preview_it_had() {
   assert_eq!(kept.preview_status, PreviewStatus::Done);
   assert_eq!(kept.title.as_deref(), Some("Old preview"));
 }
+
+const BROWSER_EXPORT: &str = r#"<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<DL><p>
+  <DT><H3>Bookmarks bar</H3>
+  <DL><p>
+    <DT><A HREF="https://youtu.be/abc?si=TRACK" ADD_DATE="1700000000">A talk</A>
+    <DT><H3>Recipes</H3>
+    <DL><p>
+      <DT><A HREF="https://kitchen.example/lasagna?utm_source=newsletter" ADD_DATE="1700000100" TAGS="pasta">Lasagna</A>
+    </DL><p>
+  </DL><p>
+  <DT><A HREF="javascript:void(0)">Bookmarklet</A>
+</DL>"#;
+
+#[tokio::test]
+async fn imports_cleaned_links_with_their_dates_and_folders() {
+  let mut store = store().await;
+  let report = store.import(BROWSER_EXPORT).await.unwrap();
+  assert_eq!((report.added, report.merged, report.skipped), (2, 0, 0));
+
+  let talk = store.find_by_url("https://youtu.be/abc").await.unwrap().unwrap();
+  assert_eq!(talk.title.as_deref(), Some("A talk"));
+  assert_eq!(talk.original_url, "https://youtu.be/abc?si=TRACK");
+  assert_eq!(talk.created_at, 1_700_000_000_000);
+  let lasagna = store.find_by_url("https://kitchen.example/lasagna").await.unwrap().unwrap();
+  assert_eq!(tag_names(&lasagna), ["pasta", "Recipes"]);
+  // Imported bookmarks are found by search like any other.
+  assert_eq!(search(&store, "lasagna").await, ["https://kitchen.example/lasagna"]);
+}
+
+#[tokio::test]
+async fn importing_twice_merges_instead_of_duplicating() {
+  let mut store = store().await;
+  store.save(new("My own title https://youtu.be/abc", &["mine"])).await.unwrap();
+  store.import(BROWSER_EXPORT).await.unwrap();
+  let report = store.import(BROWSER_EXPORT).await.unwrap();
+  assert_eq!((report.added, report.merged), (0, 2));
+
+  let talk = store.find_by_url("https://youtu.be/abc").await.unwrap().unwrap();
+  // The title the user had wins; tags add up.
+  assert_eq!(talk.title.as_deref(), Some("My own title"));
+  assert_eq!(tag_names(&talk), ["mine"]);
+  assert_eq!(store.list(&ListQuery::default()).await.unwrap().items.len(), 2);
+}
+
+#[tokio::test]
+async fn a_json_backup_restores_into_an_empty_store() {
+  let mut old = store().await;
+  let mut b = new("Great talk https://youtu.be/abc?si=TRACK", &["video"]);
+  b.note = Some("watch again".into());
+  b.tags = vec![TagInput { name: "video".into(), source: TagSource::Suggested }];
+  old.save(b).await.unwrap();
+  old.save(new("https://kitchen.example/soup", &["food", "quick"])).await.unwrap();
+  let backup = old.export_json().await.unwrap();
+
+  let mut fresh = store().await;
+  let report = fresh.import(&backup).await.unwrap();
+  assert_eq!((report.format, report.added), (crate::transfer::Format::CleanShare, 2));
+  let talk = fresh.find_by_url("https://youtu.be/abc").await.unwrap().unwrap();
+  let before = old.find_by_url("https://youtu.be/abc").await.unwrap().unwrap();
+  assert_eq!(talk.title.as_deref(), Some("Great talk"));
+  assert_eq!(talk.note.as_deref(), Some("watch again"));
+  assert_eq!(talk.tags, before.tags);
+  assert_eq!(talk.created_at, before.created_at);
+  assert_eq!(talk.id, before.id);
+  let soup = fresh.find_by_url("https://kitchen.example/soup").await.unwrap().unwrap();
+  assert_eq!(tag_names(&soup), ["food", "quick"]);
+}
+
+#[tokio::test]
+async fn html_export_lists_every_bookmark_with_tags() {
+  let mut store = store().await;
+  store.save(new("Fish & chips https://kitchen.example/fish", &["food"])).await.unwrap();
+  let html = store.export_html().await.unwrap();
+  assert!(html.starts_with("<!DOCTYPE NETSCAPE-Bookmark-file-1>"));
+  assert!(html.contains(r#"<A HREF="https://kitchen.example/fish""#));
+  assert!(html.contains(r#"TAGS="food""#));
+  assert!(html.contains(">Fish &amp; chips</A>"));
+}
+
+#[tokio::test]
+async fn files_that_arent_exports_are_refused() {
+  let mut store = store().await;
+  assert!(matches!(store.import("hello").await, Err(crate::ImportError::Parse(_))));
+}
+
+#[tokio::test]
+async fn a_big_import_adds_everything() {
+  let mut store = store().await;
+  let rows: String = (0..300)
+    .map(|i| format!("Item {i},https://site{}.example/page/{i},1700000000,tag{}|common,unread\n", i % 50, i % 20))
+    .collect();
+  let report = store.import(&format!("title,url,time_added,tags,status\n{rows}")).await.unwrap();
+  assert_eq!((report.added, report.merged, report.skipped), (300, 0, 0));
+  let common = store.tags().await.unwrap().into_iter().find(|t| t.name == "common").unwrap();
+  assert_eq!(common.count, 300);
+}

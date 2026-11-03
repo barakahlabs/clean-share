@@ -93,6 +93,9 @@ pub struct NewBookmark {
   pub note: Option<String>,
   #[serde(default)]
   pub tags: Vec<TagInput>,
+  /// When it was first saved, for imports (ms since the epoch). `None` = now.
+  #[serde(default)]
+  pub created_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
