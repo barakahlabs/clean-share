@@ -1,65 +1,14 @@
-.bookmark-list {
+/* Two cards per row on a phone, more on wider screens. */
+.bookmark-grid {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.bookmark-item {
-  width: 100%;
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  font: inherit;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
 }
 
-.bookmark-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.bookmark-thumb {
-  flex: none;
-  width: 72px;
-  height: 72px;
-  border-radius: 8px;
-  object-fit: cover;
-  background: var(--border);
-}
-
-.bookmark-item:active {
-  opacity: 0.8;
-}
-
-.bookmark-title {
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.bookmark-meta {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.bookmark-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
+/* Tag pill, also used on the detail screen. */
 .bookmark-tag {
   padding: 0 8px;
   border-radius: 999px;

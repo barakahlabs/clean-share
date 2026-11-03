@@ -4,12 +4,10 @@ import {
   listBookmarks,
   listTags,
   onPreview,
-  thumbnailUrl,
   type Bookmark,
   type TagCount,
 } from "../bookmarks";
-import { Thumbnail } from "../components/Thumbnail";
-import { formatDate, hostOf } from "../format";
+import { BookmarkCard } from "../components/BookmarkCard";
 import { BookmarkDetailScreen } from "./BookmarkDetailScreen";
 import "./Screen.css";
 import "./BookmarksScreen.css";
@@ -18,7 +16,8 @@ import "./BookmarksScreen.css";
 const SEARCH_DELAY_MS = 200;
 
 /**
- * Saved bookmarks: newest first, or by relevance while searching. A search box (as you type)
+ * Saved bookmarks as a grid of cards (two per row on a phone): newest first, or by relevance
+ * while searching. A search box (as you type)
  * and tag chips (all selected tags must match) narrow the list. Tapping a bookmark opens its
  * detail screen; Android's back button (or "‹ Bookmarks") returns to the list. With link
  * previews on, each card shows its thumbnail, updated as previews arrive.
@@ -168,27 +167,10 @@ export function BookmarksScreen() {
         </p>
       ) : (
         <>
-          <ul className="bookmark-list">
+          <ul className="bookmark-grid">
             {items.map((bookmark) => (
               <li key={bookmark.id}>
-                <button type="button" className="bookmark-item" onClick={() => open(bookmark.id)}>
-                  <span className="bookmark-text">
-                    <span className="bookmark-title">{bookmark.title ?? bookmark.url}</span>
-                    <span className="bookmark-meta">
-                      {bookmark.siteName ?? hostOf(bookmark.url)} · {formatDate(bookmark.createdAt)}
-                    </span>
-                    {bookmark.tags.length > 0 && (
-                      <span className="bookmark-tags">
-                        {bookmark.tags.map((tag) => (
-                          <span key={tag.name} className="bookmark-tag">
-                            {tag.name}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </span>
-                  <Thumbnail src={thumbnailUrl(bookmark)} className="bookmark-thumb" />
-                </button>
+                <BookmarkCard bookmark={bookmark} onOpen={() => open(bookmark.id)} />
               </li>
             ))}
           </ul>

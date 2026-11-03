@@ -94,6 +94,7 @@ fn select<'a>(doc: &'a Html, css: &str) -> impl Iterator<Item = ElementRef<'a>> 
 
 /// Whitespace collapsed, at most `max` characters (cut at a word), `None` if empty.
 fn clean(text: &str, max: usize) -> Option<String> {
+  let text = unescape(text);
   let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
   if text.is_empty() {
     return None;
@@ -105,6 +106,52 @@ fn clean(text: &str, max: usize) -> Option<String> {
   let cut: String = text.chars().take(max - 1).collect();
   let cut = cut.rsplit_once(' ').map_or(cut.as_str(), |(head, _)| head).trim_end();
   Some(format!("{cut}…"))
+}
+
+/// Character references left in text after HTML parsing: some sites escape twice, so
+/// `content="Clippy&amp;#39;s"` reads as `Clippy&#39;s`. Decodes numeric references and the
+/// common named ones, once.
+fn unescape(text: &str) -> String {
+  if !text.contains('&') {
+    return text.to_string();
+  }
+  let mut out = String::with_capacity(text.len());
+  let mut rest = text;
+  while let Some(at) = rest.find('&') {
+    out.push_str(&rest[..at]);
+    rest = &rest[at..];
+    let decoded = rest.find(';').filter(|&end| end <= 10).and_then(|end| {
+      let name = &rest[1..end];
+      let c = match name {
+        "amp" => Some('&'),
+        "lt" => Some('<'),
+        "gt" => Some('>'),
+        "quot" => Some('"'),
+        "apos" => Some('\''),
+        "nbsp" => Some(' '),
+        _ => name
+          .strip_prefix("#x")
+          .or_else(|| name.strip_prefix("#X"))
+          .map(|hex| u32::from_str_radix(hex, 16))
+          .or_else(|| name.strip_prefix('#').map(str::parse::<u32>))
+          .and_then(|n| n.ok())
+          .and_then(char::from_u32),
+      }?;
+      Some((c, end + 1))
+    });
+    match decoded {
+      Some((c, len)) => {
+        out.push(c);
+        rest = &rest[len..];
+      }
+      None => {
+        out.push('&');
+        rest = &rest[1..];
+      }
+    }
+  }
+  out.push_str(rest);
+  out
 }
 
 /// An absolute http(s) link, or `None`.

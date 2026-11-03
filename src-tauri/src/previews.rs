@@ -1,26 +1,31 @@
 //! Link previews for bookmarks: a background worker that fetches them (with `crates/link-preview`),
-//! makes thumbnails, and stores the result. Only runs while Settings → previews is on.
+//! makes thumbnails, and stores the result. Only runs while Settings → previews is on, and with
+//! "Wi-Fi only" only on unmetered connections (otherwise previews stay queued until the app is
+//! next brought to the front on Wi-Fi).
 //!
 //! - Saving a bookmark (previews on) marks it pending and wakes the worker.
 //! - The worker takes pending bookmarks newest first, one at a time, and emits
 //!   `bookmark-preview` with the bookmark id when one is done or failed.
 //! - The save sheet can fetch a preview before saving (`preview_fetch`); the worker reuses it.
 //! - Thumbnails are `thumbnails/<id>.jpg` in the app data dir, served to the WebView on the
-//!   `thumb` URI scheme (`convertFileSrc("<id>.jpg", "thumb")` in JS).
+//!   `thumb` URI scheme (`convertFileSrc("<id>.jpg", "thumb")` in JS). A bookmark without a
+//!   usable picture gets its site's icon instead, `thumbnails/<id>-icon.png` (the page's
+//!   declared icon, else the site's `/favicon.ico`).
 
 use std::{collections::VecDeque, path::PathBuf, sync::Mutex};
 
 use ::bookmarks::{PageInfo, PreviewData, PreviewStatus};
-use link_preview::{Config, Fetcher, Preview, THUMBNAIL_SIZE};
+use link_preview::{Config, Fetcher, ICON_SIZE, Preview, THUMBNAIL_SIZE};
 use tauri::{
     AppHandle, Emitter, Manager, State,
     http::{Response, StatusCode, header},
 };
+use tauri_plugin_share_target::ShareTargetExt;
 use tokio::sync::Notify;
 
 use crate::{
     bookmarks::{CommandError, CommandResult, Library},
-    settings::SettingsState,
+    settings::{Settings, SettingsState},
 };
 
 /// Previews fetched for the save sheet, kept until the bookmark is saved (or pushed out).
@@ -62,28 +67,35 @@ impl Previews {
         self.wake.notify_one();
     }
 
-    fn thumbnail_path(&self, id: &str) -> Option<PathBuf> {
-        // IDs are UUIDs; anything else never reaches the file system.
+    /// `thumbnails/<id><suffix>`. IDs are UUIDs; anything else never reaches the file system.
+    fn file(&self, id: &str, suffix: &str) -> Option<PathBuf> {
         let valid = !id.is_empty() && id.chars().all(|c| c.is_ascii_hexdigit() || c == '-');
-        Some(self.thumbnails.as_ref()?.join(format!("{id}.jpg"))).filter(|_| valid)
+        Some(self.thumbnails.as_ref()?.join(format!("{id}{suffix}"))).filter(|_| valid)
     }
 
-    /// Deletes a bookmark's thumbnail, if it has one.
+    /// Deletes a bookmark's thumbnail and icon, if it has them.
     pub fn remove_thumbnail(&self, id: &str) {
-        if let Some(path) = self.thumbnail_path(id) {
-            let _ = std::fs::remove_file(path);
+        for suffix in [THUMB, ICON] {
+            if let Some(path) = self.file(id, suffix) {
+                let _ = std::fs::remove_file(path);
+            }
         }
     }
 
-    /// Answers `thumb://localhost/<id>.jpg` (or `http://thumb.localhost/<id>.jpg` on Android).
+    /// Answers `thumb://localhost/<id>.jpg` or `…/<id>-icon.png` (on Android
+    /// `http://thumb.localhost/…`).
     pub fn serve(&self, path: &str) -> Response<Vec<u8>> {
-        let id = path.trim_start_matches('/').trim_end_matches(".jpg");
-        match self.thumbnail_path(id).and_then(|p| std::fs::read(p).ok()) {
-            Some(jpeg) => Response::builder()
-                .header(header::CONTENT_TYPE, "image/jpeg")
+        let name = path.trim_start_matches('/');
+        let (id, suffix, content_type) = match name.strip_suffix(ICON) {
+            Some(id) => (id, ICON, "image/png"),
+            None => (name.trim_end_matches(THUMB), THUMB, "image/jpeg"),
+        };
+        match self.file(id, suffix).and_then(|p| std::fs::read(p).ok()) {
+            Some(bytes) => Response::builder()
+                .header(header::CONTENT_TYPE, content_type)
                 // A retried preview replaces the file; JS adds `?v=<fetched at>` to the URL.
                 .header(header::CACHE_CONTROL, "no-cache")
-                .body(jpeg)
+                .body(bytes)
                 .unwrap(),
             None => Response::builder()
                 .status(StatusCode::NOT_FOUND)
@@ -125,43 +137,95 @@ impl Previews {
         Ok(preview)
     }
 
-    /// Downloads the preview image and stores it as the bookmark's thumbnail. Without an image
-    /// (or if it can't be used), an old thumbnail is removed.
-    async fn store_thumbnail(&self, id: &str, image_url: Option<&str>) {
-        let (Some(fetcher), Some(path)) = (self.fetcher.as_ref(), self.thumbnail_path(id)) else {
-            return;
-        };
-        let jpeg = match image_url {
-            Some(url) => match fetcher.image(url).await {
-                // Decoding and resizing is CPU work; keep it off the async threads.
-                Ok(image) => tauri::async_runtime::spawn_blocking(move || {
-                    link_preview::thumbnail(&image.bytes, THUMBNAIL_SIZE)
-                })
-                .await
-                .map_err(|e| e.to_string())
-                .and_then(|r| r.map_err(|e| e.to_string())),
-                Err(e) => Err(e.to_string()),
-            },
+    /// Stores the bookmark's picture: the preview image as a thumbnail, or, without a usable
+    /// one, the site's icon. Whatever doesn't apply any more (after a retry) is removed.
+    async fn store_pictures(&self, id: &str, preview: &Preview) {
+        let thumbnail = match preview.image_url.as_deref() {
+            Some(url) => self.picture(url, |b| link_preview::thumbnail(b, THUMBNAIL_SIZE)).await,
             None => Err("no image".into()),
         };
-        match jpeg {
-            Ok(jpeg) => {
-                let written = path
-                    .parent()
-                    .map_or(Ok(()), std::fs::create_dir_all)
-                    .and_then(|()| std::fs::write(&path, jpeg));
-                if let Err(e) = written {
-                    eprintln!("can't save thumbnail for {id}: {e}");
-                }
+        if let Err(reason) = &thumbnail
+            && preview.image_url.is_some()
+        {
+            eprintln!("no thumbnail for {id}: {reason}");
+        }
+        let icon = if thumbnail.is_ok() {
+            Err("has a thumbnail".to_string())
+        } else {
+            match preview.icon_url.clone().or_else(|| favicon(&preview.url)) {
+                Some(url) => self.picture(&url, |b| link_preview::icon(b, ICON_SIZE)).await,
+                None => Err("no icon".into()),
             }
-            Err(reason) => {
-                if image_url.is_some() {
-                    eprintln!("no thumbnail for {id}: {reason}");
-                }
-                let _ = std::fs::remove_file(&path);
+        };
+        self.keep(id, THUMB, thumbnail.ok());
+        self.keep(id, ICON, icon.ok());
+    }
+
+    /// After a failed fetch (e.g. the page is gone): the site's icon, from its homepage's
+    /// declared icons, else its `/favicon.ico`. Not if the bookmark already has a picture or icon
+    /// from an earlier preview, which it keeps.
+    async fn store_site_icon(&self, id: &str, page_url: &str) {
+        let has_picture = [THUMB, ICON].iter().any(|s| self.file(id, s).is_some_and(|p| p.exists()));
+        let Some(home) = origin(page_url) else { return };
+        if has_picture {
+            return;
+        }
+        let declared = match self.fetch(&format!("{home}/")).await {
+            Ok(preview) => preview.icon_url,
+            Err(_) => None,
+        };
+        for url in declared.into_iter().chain(favicon(page_url)) {
+            if let Ok(png) = self.picture(&url, |b| link_preview::icon(b, ICON_SIZE)).await {
+                return self.keep(id, ICON, Some(png));
             }
         }
     }
+
+    /// Downloads an image and converts it (off the async threads: decoding is CPU work).
+    async fn picture(
+        &self,
+        url: &str,
+        convert: fn(&[u8]) -> link_preview::Result<Vec<u8>>,
+    ) -> Result<Vec<u8>, String> {
+        let fetcher = self.fetcher.as_ref().ok_or("link previews are unavailable")?;
+        let image = fetcher.image(url).await.map_err(|e| e.to_string())?;
+        tauri::async_runtime::spawn_blocking(move || convert(&image.bytes))
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())
+    }
+
+    /// Writes `thumbnails/<id><suffix>`, or removes it when there's nothing to keep.
+    fn keep(&self, id: &str, suffix: &str, bytes: Option<Vec<u8>>) {
+        let Some(path) = self.file(id, suffix) else { return };
+        let result = match bytes {
+            Some(bytes) => path
+                .parent()
+                .map_or(Ok(()), std::fs::create_dir_all)
+                .and_then(|()| std::fs::write(&path, bytes)),
+            None => match std::fs::remove_file(&path) {
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+                other => other,
+            },
+        };
+        if let Err(e) = result {
+            eprintln!("can't update {}: {e}", path.display());
+        }
+    }
+}
+
+const THUMB: &str = ".jpg";
+const ICON: &str = "-icon.png";
+
+/// `https://blog.rust-lang.org` for any page on it.
+fn origin(page_url: &str) -> Option<String> {
+    let url = tauri::Url::parse(page_url).ok()?;
+    Some(url.origin().ascii_serialization()).filter(|o| o != "null")
+}
+
+/// The site's standard icon, for pages that declare none (or that refused us, like Reddit's).
+fn favicon(page_url: &str) -> Option<String> {
+    Some(format!("{}/favicon.ico", origin(page_url)?))
 }
 
 /// Starts the worker. It runs for the app's lifetime and sleeps until woken.
@@ -174,13 +238,19 @@ pub fn start(app: AppHandle) {
     });
 }
 
-/// Works through the pending bookmarks until none are left (or previews get switched off).
+/// True if previews may go online now: switched on, and on Wi-Fi when that's asked for.
+fn may_fetch(app: &AppHandle, settings: &Settings) -> bool {
+    settings.previews
+        && !(settings.previews_wifi_only && app.share_target().is_metered().unwrap_or(true))
+}
+
+/// Works through the pending bookmarks until none are left, or previews may not go online.
 async fn run_queue(app: &AppHandle) {
     let previews = app.state::<Previews>();
     let library = app.state::<Library>();
     let settings = app.state::<SettingsState>();
     loop {
-        if !settings.get().previews {
+        if !may_fetch(app, &settings.get()) {
             return;
         }
         let batch = match library.store.lock().await.as_ref() {
@@ -198,10 +268,10 @@ async fn run_queue(app: &AppHandle) {
                 Some(preview) => Ok(preview),
                 None => previews.fetch(&url).await,
             };
-            if let Ok(preview) = &fetched {
-                previews
-                    .store_thumbnail(&id, preview.image_url.as_deref())
-                    .await;
+            match &fetched {
+                Ok(preview) => previews.store_pictures(&id, preview).await,
+                // The page failed (e.g. 404), but the site usually still has an icon.
+                Err(_) => previews.store_site_icon(&id, &url).await,
             }
             // The store lock is only held for the write, never during network requests.
             let mut guard = library.store.lock().await;
@@ -210,7 +280,7 @@ async fn run_queue(app: &AppHandle) {
                 Ok(preview) => store.set_preview(&id, &preview_data(preview)).await.map(|_| ()),
                 Err(reason) => {
                     eprintln!("preview for {url} failed: {reason}");
-                    store.set_preview_status(&id, PreviewStatus::Failed).await
+                    store.preview_failed(&id).await
                 }
             };
             drop(guard);
@@ -283,14 +353,16 @@ fn accept_language() -> Option<String> {
 }
 
 /// Fetches a preview for the save sheet, before saving: the first link in `text`. Returns
-/// `None` when previews are off. The worker reuses it once the bookmark is saved.
+/// `None` when previews are off (or Wi-Fi only on mobile data). The worker reuses it once the
+/// bookmark is saved.
 #[tauri::command]
 pub async fn preview_fetch(
+    app: AppHandle,
     previews: State<'_, Previews>,
     settings: State<'_, SettingsState>,
     text: String,
 ) -> CommandResult<Option<Preview>> {
-    if !settings.get().previews {
+    if !may_fetch(&app, &settings.get()) {
         return Ok(None);
     }
     let Some(link) = link_cleaner::links(&text).into_iter().next() else {

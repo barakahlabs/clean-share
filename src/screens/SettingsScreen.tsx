@@ -18,10 +18,10 @@ export function SettingsScreen() {
       .catch((e) => setError(String(e)));
   }, []);
 
-  const togglePreviews = (previews: boolean) => {
+  const change = (patch: Partial<Settings>) => {
     if (!settings) return;
-    setLocalSettings({ ...settings, previews });
-    setSettings({ ...settings, previews })
+    setLocalSettings({ ...settings, ...patch });
+    setSettings({ ...settings, ...patch })
       .then(setLocalSettings)
       .catch((e) => {
         setLocalSettings(settings);
@@ -66,15 +66,32 @@ export function SettingsScreen() {
                 className="settings-switch"
                 checked={settings?.previews ?? false}
                 disabled={!settings}
-                onChange={(event) => togglePreviews(event.target.checked)}
+                onChange={(event) => change({ previews: event.target.checked })}
               />
             </label>
           </li>
+          {settings?.previews && (
+            <li>
+              <label className="settings-row">
+                <span>Only on Wi-Fi</span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  className="settings-switch"
+                  checked={settings.previewsWifiOnly}
+                  onChange={(event) => change({ previewsWifiOnly: event.target.checked })}
+                />
+              </label>
+            </li>
+          )}
         </ul>
         <p className="settings-note">
           Shows a picture, description and site for each bookmark. To get them, this phone opens the
           saved link once, like a browser would (without your cookies), and keeps a small picture.
           It's the only thing in Clean Share that goes online.
+          {settings?.previews && settings.previewsWifiOnly && (
+            <> On mobile data, previews wait until the app is next open on Wi-Fi.</>
+          )}
         </p>
         {error && <p className="settings-note settings-error">{error}</p>}
       </section>

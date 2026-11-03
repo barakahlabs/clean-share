@@ -7,8 +7,8 @@ license = "MIT"
 
 [dependencies]
 encoding_rs = "0.8"
-# Thumbnails: decode the common web formats, write JPEG.
-image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
+# Thumbnails and site icons: decode the common web formats (and .ico), write JPEG / PNG.
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "ico"] }
 # TLS: rustls with ring and the bundled Mozilla roots, so it builds and verifies the same way on
 # Android and iOS (the platform verifier needs extra setup on Android).
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "http2"] }

@@ -49,6 +49,21 @@ pub fn run() {
             settings::settings_get,
             settings::settings_set,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // Back in front (e.g. on Wi-Fi now): let waiting previews go ahead. This is the
+            // window's Resumed (Android onResume, iOS willEnterForeground), not RunEvent::Resumed,
+            // which is the event loop's.
+            #[cfg(mobile)]
+            if let tauri::RunEvent::WindowEvent {
+                event: tauri::WindowEvent::Resumed,
+                ..
+            } = event
+            {
+                app.state::<previews::Previews>().wake();
+            }
+            #[cfg(not(mobile))]
+            let _ = (app, event);
+        });
 }
