@@ -120,7 +120,7 @@ Paid sync only (phase 8):
 |---|---|---|
 | Storage | `crates/bookmarks` (new) | Schema, migrations, save/get/list/update/delete, tags, search, sync (phase 8) |
 | Backend | `backend/` (new, phase 8) | Serverless function + master DB: account lookup, DB creation, billing, deletion |
-| Previews | `crates/link-preview` (new, phase 3) | HTTP fetch with limits, Open Graph / meta parsing, oEmbed |
+| Previews | `crates/link-preview` (phase 3) | HTTP fetch with limits; oEmbed, Open Graph, JSON-LD, keywords, excerpt |
 | Tag suggestions | `crates/tag-suggest` (new, phase 2) | `TagSuggester` trait; matching suggester; AI providers later |
 | Tauri commands | `src-tauri/src/bookmarks.rs` | Thin wrappers; opens the DB in the app data dir; settings |
 | Share routing | `plugins/share-target` | Report which share entry was used |
@@ -289,23 +289,46 @@ source app. That needs the database in the App Group container; it's left for af
 Turned on by **Settings → Fetch link previews** (off by default). When on, saving a bookmark queues a
 background fetch.
 
-1. **oEmbed first** for providers that offer it without an account:
-   - YouTube: `https://www.youtube.com/oembed?url=…&format=json` → title, channel, thumbnail.
-   - X: `https://publish.twitter.com/oembed?url=…` → post text, author.
-   - Instagram's official oEmbed needs a Facebook app token; without one we fall back to step 2,
-     which often returns little because Instagram asks visitors to log in.
-2. **Page metadata** otherwise: fetch the cleaned URL and read `og:title`, `og:description`,
-   `og:image`, `og:site_name`, `twitter:*`, `<title>`, `<meta name="description">`.
-3. **Thumbnail**: download `og:image` (cleaned), resize to ~400 px, store as a file in the app data
-   dir; the list never loads images from the network.
+`crates/link-preview` builds a `Preview` from up to three sources, best first:
 
-Fetch rules: only `http(s)`, cleaned URL only, no cookies, a plain browser-like user agent, 10 s
-timeout, stop reading after 1 MB of HTML / 5 MB of image, follow at most 5 redirects (cleaning each
-redirect target), refuse private/local IP addresses. Failures set `preview_status = "failed"` with a
-manual "Retry" in the detail screen.
+1. **oEmbed**, for providers that answer without an API key: YouTube, X, TikTok, Spotify, Vimeo,
+   Reddit (posts), SoundCloud, plus any page that links to its own oEmbed JSON. It gives the title,
+   author, thumbnail and the embed player, and works where the page itself blocks fetches (X).
+   Meta's oEmbed (Instagram, Facebook, Threads) needs an app token, so those use step 2, which
+   works for public Instagram profiles and posts.
+2. **Page metadata**: `og:*`, `twitter:*`, `<title>`, `<meta name="description">`, `keywords` /
+   `news_keywords`, `article:tag` / `og:video:tag`, `article:published_time`, icons
+   (`apple-touch-icon`, the largest `icon`, else `/favicon.ico`) and `<html lang>`.
+3. **JSON-LD** (schema.org): the page's kind (`article`, `recipe`, `video`, `music`, `product`,
+   `event`, `book`, `movie`, `place`, `person`, `course`, `podcast`, `software`), author, publish
+   date, keywords, and fallbacks for title, description and image.
 
-Implementation: `reqwest` (rustls) + `scraper` for HTML, `image` for resizing, in
-`crates/link-preview` with tests against saved HTML fixtures (no network in tests).
+oEmbed wins for title, author, thumbnail and site name; the page wins for the rest. The preview
+also keeps a **text excerpt** (≤ 1000 characters of `<article>`/`<main>`/body text, without nav,
+header, footer, scripts or forms; none when most of it is link text, as on pages drawn by
+JavaScript). Keywords, kind and excerpt are there for tag suggestions now and on-device AI later
+(phase 4).
+
+**Thumbnail**: download the image (cleaned first: it can carry tracking), resize to ~400 px, store
+as a file in the app data dir; the list never loads images from the network.
+
+Fetch rules (`link_preview::Config`):
+- only `http(s)`; the cleaned URL; no cookies, no `Referer`;
+- an honest user agent (`CleanShare/<version> (link preview; +<repo>)`): no pretending to be a
+  browser or a social network's crawler;
+- `Accept-Language` from the phone's languages, so sites that pick a language by location don't;
+- 10 s per request; pages read up to 2 MB and parsed as far as they got (metadata is near the top);
+  oEmbed JSON over 256 KB and images over 5 MB refused; at most 5 redirects;
+- no private, local or reserved addresses, whether in the link, a redirect, or what DNS returns.
+
+Failures set `preview_status = "failed"` with a manual "Retry" in the detail screen. The crate
+doesn't clean URLs itself (it has no rules): the caller cleans the image URL before downloading it
+and the embed URL before storing it (Spotify's carries `utm_source`).
+
+Implementation: `reqwest` with rustls (ring, bundled Mozilla roots, so Android needs no platform
+verifier setup), `scraper` for HTML, `encoding_rs` for charsets, `image` for resizing (with the
+store, next step). Tests use saved HTML/oEmbed fixtures and a local test server; no network.
+`cargo run --example preview -- <link>` prints a live preview.
 
 ## Tagging
 
@@ -438,8 +461,11 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 
 ### Phase 3 – Preview cards
 - [ ] Settings screen + `previews_enabled`.
-- [ ] `crates/link-preview`: oEmbed (YouTube, X), Open Graph parsing, limits, fixtures tests.
+- [x] `crates/link-preview`: oEmbed (no-key providers + discovery), Open Graph, JSON-LD, keywords,
+      kind, excerpt, icons, limits, fixtures and local-server tests.
+- [ ] Migration: keywords, kind, excerpt (description, image, site name already have columns).
 - [ ] Background fetch queue, thumbnail cache, `preview_status`, retry.
+- [ ] Page keywords and kind feed tag suggestions.
 - [ ] Cards in list and detail; description added to FTS and to tag suggestions.
 - **Done when:** with previews on, YouTube and article links show title + thumbnail offline after
   saving; with previews off, no request is made (checked with a proxy).

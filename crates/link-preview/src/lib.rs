@@ -1,0 +1,164 @@
+//! Link previews for Clean Share bookmarks.
+//!
+//! [`Fetcher::preview`] builds a [`Preview`] for one (already cleaned) link from up to three
+//! sources, best first:
+//!
+//! 1. **oEmbed**, for providers that offer it without an API key (YouTube, X, TikTok, Spotify,
+//!    Vimeo, Reddit, SoundCloud) or that link to it from their page. It works even where the page
+//!    itself blocks fetches, and gives the title, author, thumbnail and embed player.
+//! 2. **Page metadata**: Open Graph and Twitter card tags, `<meta>` description and keywords,
+//!    `article:tag`, icons, `<html lang>`.
+//! 3. **JSON-LD** (schema.org) in the page: the kind of page (recipe, article, product, video…),
+//!    author, publish date and keywords.
+//!
+//! It also keeps a short text excerpt of the page, for tag suggestions and on-device AI later.
+//!
+//! Every request has limits ([`Config`]): a time limit, a size limit (pages are cut off, images
+//! and JSON refused), a redirect limit, http(s) only, and no private or local addresses, since a
+//! shared link shouldn't make the phone talk to the home router.
+//!
+//! [`parse_html`] and [`oembed`] are plain functions, so most of the crate is tested without
+//! network.
+
+mod fetch;
+mod guard;
+mod html;
+pub mod oembed;
+
+use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
+
+pub use fetch::{Fetcher, Image};
+pub use html::{Page, parse_html};
+
+/// What a link points to, as far as the preview sources say. Every field is optional: sites
+/// differ a lot in what they provide.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Preview {
+  /// The page's address after redirects.
+  pub url: String,
+  pub title: Option<String>,
+  pub description: Option<String>,
+  pub site_name: Option<String>,
+  /// The main image (thumbnail). Absolute URL; it may still carry tracking, so clean it before
+  /// storing or fetching.
+  pub image_url: Option<String>,
+  /// The site's icon: the largest declared one, or `/favicon.ico`.
+  pub icon_url: Option<String>,
+  pub author: Option<String>,
+  /// What kind of page this is, lowercase: `article`, `recipe`, `video`, `music`, `product`,
+  /// `event`, `book`, `movie`, `place`, `person`, `course`, `podcast` or `software`.
+  pub kind: Option<String>,
+  /// Keywords and article tags the page declares, deduplicated, at most [`MAX_KEYWORDS`].
+  pub keywords: Vec<String>,
+  /// Publish date as the page gives it (usually ISO 8601).
+  pub published: Option<String>,
+  /// Language from `<html lang>`, e.g. `en` or `de-DE`.
+  pub language: Option<String>,
+  /// The start of the page's main text, at most [`MAX_EXCERPT`] characters.
+  pub excerpt: Option<String>,
+  pub embed: Option<Embed>,
+}
+
+/// A player the provider offers (from oEmbed).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Embed {
+  /// Provider, lowercase, e.g. `youtube`.
+  pub kind: String,
+  /// The iframe's address, if the embed is an iframe (YouTube, Vimeo, Spotify do this; X uses a
+  /// script instead, so this is `None`).
+  pub url: Option<String>,
+}
+
+pub const MAX_KEYWORDS: usize = 20;
+pub const MAX_EXCERPT: usize = 1000;
+
+/// Request limits. The defaults suit a phone on a mobile connection.
+#[derive(Debug, Clone)]
+pub struct Config {
+  /// For the whole request, including redirects and reading the body.
+  pub timeout: Duration,
+  /// Pages are read up to this size and parsed as far as they got (metadata is near the top).
+  pub max_page_bytes: usize,
+  /// oEmbed responses over this size are refused.
+  pub max_json_bytes: usize,
+  /// Images over this size are refused.
+  pub max_image_bytes: usize,
+  pub max_redirects: usize,
+  /// Allows private and local addresses. Off except in tests.
+  pub allow_private: bool,
+  pub user_agent: String,
+  /// Sent as `Accept-Language`, e.g. the phone's languages (`de-DE,de;q=0.9,en;q=0.8`), so sites
+  /// that pick a language by location answer in the user's instead.
+  pub accept_language: Option<String>,
+}
+
+impl Default for Config {
+  fn default() -> Self {
+    Self {
+      timeout: Duration::from_secs(10),
+      max_page_bytes: 2 * 1024 * 1024,
+      max_json_bytes: 256 * 1024,
+      max_image_bytes: 5 * 1024 * 1024,
+      max_redirects: 5,
+      allow_private: false,
+      // Honest: no pretending to be a browser or a social network's crawler.
+      user_agent: format!(
+        "CleanShare/{} (link preview; +https://github.com/barakahlabs/clean-share)",
+        env!("CARGO_PKG_VERSION")
+      ),
+      accept_language: None,
+    }
+  }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+  #[error("not a web link: {0}")]
+  InvalidUrl(String),
+  #[error("{0} is a private or local address")]
+  Blocked(String),
+  #[error("the site answered {0}")]
+  Status(u16),
+  #[error("not a web page ({0})")]
+  NotHtml(String),
+  #[error("not an image ({0})")]
+  NotImage(String),
+  #[error("larger than {0} bytes")]
+  TooLarge(usize),
+  #[error("timed out")]
+  Timeout,
+  #[error("network error: {0}")]
+  Network(String),
+  #[error("invalid oEmbed response: {0}")]
+  OEmbed(String),
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// Combines the page and oEmbed results. oEmbed is the provider's own answer, so it wins for
+/// title, author, thumbnail and site name; the page wins for everything oEmbed doesn't have.
+pub fn merge(url: String, page: Option<Page>, oembed: Option<oembed::OEmbed>) -> Preview {
+  let page = page.unwrap_or_default();
+  let oembed = oembed.unwrap_or_default();
+  let oembed_kind = oembed.kind().map(str::to_string);
+  let embed = oembed.embed();
+  Preview {
+    url,
+    title: oembed.title.or(page.title),
+    description: page.description,
+    site_name: page.site_name.or(oembed.provider_name),
+    image_url: oembed.thumbnail_url.or(page.image_url),
+    icon_url: page.icon_url,
+    author: oembed.author_name.or(page.author),
+    kind: page.kind.or(oembed_kind),
+    keywords: page.keywords,
+    published: page.published,
+    language: page.language,
+    excerpt: page.excerpt,
+    embed,
+  }
+}
