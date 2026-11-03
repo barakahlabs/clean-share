@@ -2,6 +2,7 @@ package com.cleanshare.app
 
 import android.os.Bundle
 import android.view.View
+import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,5 +21,12 @@ class MainActivity : TauriActivity() {
       view.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
       insets
     }
+  }
+
+  // No stretch when pulling past the top or bottom: Android 12+ stretches the whole WebView,
+  // which dragged the fixed tab bar off the screen. (CSS overscroll-behavior doesn't stop it.)
+  override fun onWebViewCreate(webView: WebView) {
+    super.onWebViewCreate(webView)
+    webView.overScrollMode = View.OVER_SCROLL_NEVER
   }
 }

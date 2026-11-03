@@ -36,3 +36,10 @@
 body {
   margin: 0;
 }
+
+/* No stretch or bounce when pulling past the top or bottom (Android 12+ stretches the whole
+   page, iOS bounces it): it dragged the fixed tab bar off the screen. Scrolling is unchanged. */
+html,
+body {
+  overscroll-behavior: none;
+}

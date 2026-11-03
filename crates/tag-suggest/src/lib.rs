@@ -14,8 +14,8 @@
 //! - [`Reason::Related`]: tags often used together with the ones already picked.
 //! - [`Reason::Provider`]: a small built-in map, e.g. YouTube → `video`.
 //! - [`Reason::Page`]: what the page says about itself in its preview: its declared keywords
-//!   (an existing tag that matches one ranks high; a few others are offered as new tags) and its
-//!   kind (a recipe page suggests `recipe`).
+//!   (an existing tag that matches one ranks high; a few others are offered as new tags, if the
+//!   page's text uses those words) and its kind (a recipe page suggests `recipe`).
 
 mod words;
 
@@ -108,7 +108,9 @@ const RELATED: f32 = 1.5;
 const PROVIDER: f32 = 1.0;
 /// A page keyword that matches an existing tag.
 const PAGE_MATCH: f32 = 2.5;
-/// A page keyword offered as a new tag; only the first few, short ones.
+/// A page keyword offered as a new tag; only the first few short ones that the page's own text
+/// uses. Sites also declare internal labels (Allrecipes: "publisher-tested") that never appear in
+/// what a reader sees; this leaves those out.
 const PAGE_NEW: f32 = 0.75;
 const PAGE_NEW_MAX: usize = 3;
 const PAGE_KIND: f32 = 1.0;
@@ -170,7 +172,10 @@ impl TagSuggester for MatchSuggester {
     for keyword in &content.keywords {
       if ranking.is_known(keyword) {
         ranking.add(keyword, Reason::Page, PAGE_MATCH);
-      } else if new_keywords < PAGE_NEW_MAX && usable_as_tag(keyword) {
+      } else if new_keywords < PAGE_NEW_MAX
+        && usable_as_tag(keyword)
+        && words::contains(&text, &words::stems(keyword))
+      {
         ranking.add(keyword, Reason::Page, PAGE_NEW);
         new_keywords += 1;
       }

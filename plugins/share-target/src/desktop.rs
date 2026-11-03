@@ -22,6 +22,11 @@ impl<R: Runtime> ShareTarget<R> {
     Ok(false)
   }
 
+  /// Desktop connections are treated as unmetered.
+  pub fn is_metered(&self) -> crate::Result<bool> {
+    Ok(false)
+  }
+
   pub fn get_shared(&self) -> crate::Result<SharedContent> {
     Ok(SharedContent::default())
   }
