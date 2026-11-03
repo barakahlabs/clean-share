@@ -1,0 +1,67 @@
+/* Edge to edge at the top of the detail card, like the picture it replaces. */
+.embed-poster,
+.embed-frame {
+  position: relative;
+  display: block;
+  width: calc(100% + 32px);
+  margin: -16px -16px 4px;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  background: #111;
+}
+
+.embed-poster {
+  /* Padding ratio (aspect-ratio collapses inside a <button>): 16:9. */
+  height: 0;
+  padding: 56.25% 0 0;
+  border: none;
+  cursor: pointer;
+}
+
+.embed-poster img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.85;
+}
+
+.embed-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #111;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.embed-poster:active .embed-play {
+  transform: scale(0.95);
+}
+
+.embed-from {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.embed-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}

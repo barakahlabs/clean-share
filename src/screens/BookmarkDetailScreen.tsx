@@ -10,6 +10,8 @@ import {
 } from "../bookmarks";
 import { getSettings } from "../settings";
 import { Thumbnail } from "../components/Thumbnail";
+import { EmbedPlayer } from "../components/EmbedPlayer";
+import { playerFor } from "../embeds";
 import { shareText } from "../shareTarget";
 import { ConfirmSheet } from "../components/ConfirmSheet";
 import { formatDate, hostOf, titleFromLink } from "../format";
@@ -25,8 +27,9 @@ type Props = {
 };
 
 /**
- * One bookmark: picture and description (with link previews on), title, cleaned link, site and
- * date, tags and note, with Open, Share, Edit (the save sheet in edit mode) and Delete (after a
+ * One bookmark: picture and description (with link previews on), or a tap-to-play player for
+ * video and audio links (YouTube, Vimeo, Spotify, SoundCloud, X, TikTok), title, cleaned link,
+ * site and date, tags and note, with Open, Share, Edit (the save sheet in edit mode) and Delete (after a
  * confirm sheet).
  */
 export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
@@ -72,6 +75,8 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
     return () => window.removeEventListener("popstate", onBackPressed);
   }, [editing]);
 
+  const player = bookmark ? playerFor(bookmark) : null;
+
   return (
     <main className="screen with-tabs">
       <header className="screen-header">
@@ -85,7 +90,15 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
       ) : bookmark === null ? null : (
         <>
           <section className="detail-card">
-            <Thumbnail src={thumbnailUrl(bookmark)} className="detail-image" />
+            {player ? (
+              <EmbedPlayer
+                player={player}
+                poster={thumbnailUrl(bookmark)}
+                title={bookmark.title ?? titleFromLink(bookmark.url)}
+              />
+            ) : (
+              <Thumbnail src={thumbnailUrl(bookmark)} className="detail-image" />
+            )}
             <h1 className="detail-title">{bookmark.title ?? titleFromLink(bookmark.url)}</h1>
             {bookmark.description && <p className="detail-description">{bookmark.description}</p>}
             <p className="detail-url">{bookmark.url}</p>
