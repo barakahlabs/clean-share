@@ -145,6 +145,13 @@ export function thumbnailUrl(bookmark: Bookmark): string | null {
   return `${convertFileSrc(`${bookmark.id}.jpg`, "thumb")}?v=${bookmark.previewFetchedAt ?? 0}`;
 }
 
+/** The site's icon saved on the phone, for bookmarks without a picture. The file may not
+ * exist (a site without one, or the bookmark has a picture instead): hide the image on error. */
+export function siteIconUrl(bookmark: Bookmark): string | null {
+  if (bookmark.previewStatus !== "done") return null;
+  return `${convertFileSrc(`${bookmark.id}-icon.png`, "thumb")}?v=${bookmark.previewFetchedAt ?? 0}`;
+}
+
 /** Calls `onDone` with a bookmark's id whenever its preview is fetched (or fails). */
 export function onPreview(onDone: (id: string) => void): () => void {
   const stop = listen<string>("bookmark-preview", (event) => onDone(event.payload));

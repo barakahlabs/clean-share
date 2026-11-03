@@ -43,6 +43,25 @@
   color: hsl(var(--tile-hue) 35% 38%);
 }
 
+/* The site's icon on its tile, on a white rounded square so dark and transparent icons stay
+   visible. Invisible (not display: none, which would stop a lazy image loading) until it has
+   loaded, over the initial, which goes once it has. */
+.bookmark-icon {
+  position: absolute;
+  opacity: 0;
+  width: 48px;
+  height: 48px;
+  padding: 8px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  object-fit: contain;
+}
+
+.bookmark-icon.loaded {
+  opacity: 1;
+}
+
 .bookmark-image {
   position: absolute;
   inset: 0;

@@ -32,7 +32,7 @@ use serde::{Deserialize, Serialize};
 
 pub use fetch::{Fetcher, Image};
 pub use html::{Page, parse_html};
-pub use thumbnail::{THUMBNAIL_SIZE, thumbnail};
+pub use thumbnail::{ICON_SIZE, THUMBNAIL_SIZE, icon, thumbnail};
 
 /// What a link points to, as far as the preview sources say. Every field is optional: sites
 /// differ a lot in what they provide.

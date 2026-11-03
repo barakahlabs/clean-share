@@ -192,7 +192,10 @@ setting               not yet: added by a migration when the first synced prefer
 
 - **Thumbnails** (phase 3) are files named after the bookmark ID in the app data dir
   (`thumbnails/<id>.jpg`, ≤ 800 px, JPEG), not a column. The WebView loads them on the `thumb`
-  URI scheme. Deleting a bookmark deletes its thumbnail.
+  URI scheme. A bookmark without a usable picture gets its site's icon instead
+  (`thumbnails/<id>-icon.png`, ≤ 128 px PNG, transparency kept; `.ico` read too): the page's
+  declared icon, else the site's `/favicon.ico` (pages that refuse us, like Reddit's). Cards show
+  it on the site-coloured tile; without one, the site's initial. Deleting a bookmark deletes both.
 - **Preview queue:** `preview_status = 'pending'` rows, newest first (index
   `bookmark_preview_queue`). Saving with previews on queues the bookmark; switching previews on
   queues every `none`; failed ones are retried one at a time from the detail screen.
@@ -497,7 +500,7 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 - [x] Background fetch queue, thumbnail cache, `preview_status`, retry command.
 - [x] Page keywords, kind, description and excerpt feed tag suggestions (new `page` reason).
 - [x] Bookmarks as a grid of cards, two per row on a phone (`auto-fill`, min 150 px): picture
-      on top (1.91:1), or a tile with the site's initial in a colour per site; title (3 lines),
+      on top (1.91:1), or a tile in a colour per site with the site's icon (else its initial); title (3 lines),
       site, up to 2 tags. Untitled bookmarks show their short link. Detail: picture, description,
       author, publish date, "Fetching preview…" / Retry. Both refresh on `bookmark-preview`.
 - [x] Only on Wi-Fi; waiting previews resume when the app comes to the front.
