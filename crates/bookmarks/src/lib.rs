@@ -14,6 +14,8 @@
 //! - [`Store`] runs the migrations and all reads and writes on that connection.
 //! - [`Cleaner`] (tracking rules) and [`Clock`] are passed in, so tests and downloaded rules can
 //!   replace them.
+//! - [`transfer`] reads and writes export files; [`Store::import`] and the `export_*` methods
+//!   move bookmarks in and out.
 //! - [`Store::suggest_tags`] gathers the user's tagging history and ranks tags with the
 //!   `tag-suggest` crate.
 //!
@@ -28,11 +30,12 @@ mod ids;
 mod migrate;
 mod model;
 mod store;
+pub mod transfer;
 
 pub use cleaner::{BundledRules, Cleaner, Rules};
 pub use clock::{Clock, SystemClock};
 pub use error::{Error, Result};
 pub use migrate::SCHEMA_VERSION;
 pub use model::*;
-pub use store::Store;
+pub use store::{ImportError, ImportReport, Store};
 pub use tag_suggest::{Reason, Suggestion};

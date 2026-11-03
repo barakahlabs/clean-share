@@ -5,6 +5,9 @@ mod preview;
 mod row;
 mod suggest;
 mod tags;
+mod transfer;
+
+pub use transfer::{ImportError, ImportReport};
 
 use std::sync::Arc;
 
@@ -94,7 +97,7 @@ impl Store {
           "INSERT INTO bookmark
              (id, url, original_url, title, note, shared_text, provider, rules_revision,
               created_at, updated_at)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
           turso::params![
             id.as_str(),
             link.cleaned.as_str(),
@@ -104,6 +107,7 @@ impl Store {
             new.shared_text.as_str(),
             link.provider,
             self.cleaner.revision(),
+            new.created_at.unwrap_or(now),
             now
           ],
         )
