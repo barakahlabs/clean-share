@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import { listTags } from "../bookmarks";
 import { getSettings, setSettings, type Settings } from "../settings";
 import { TagsScreen } from "./TagsScreen";
+import { TransferScreen } from "./TransferScreen";
 import "./Screen.css";
 import "./SettingsScreen.css";
 
-/** Settings tab: link previews, and Tags (a sub-screen; Android's back button returns here). */
+type Page = "main" | "tags" | "transfer";
+const SUB_PAGES: Page[] = ["tags", "transfer"];
+
+/** Settings tab: link previews, plus Tags and Export and import (sub-screens; Android's back
+ * button returns here). */
 export function SettingsScreen() {
-  const [page, setPage] = useState<"main" | "tags">("main");
+  const [page, setPage] = useState<Page>("main");
   const [tagCount, setTagCount] = useState<number | null>(null);
   const [settings, setLocalSettings] = useState<Settings | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +38,7 @@ export function SettingsScreen() {
   // it lands back on the Tags entry, so stay on Tags then.
   useEffect(() => {
     const onBack = (event: PopStateEvent) =>
-      setPage(event.state?.settingsPage === "tags" ? "tags" : "main");
+      setPage(SUB_PAGES.includes(event.state?.settingsPage) ? event.state.settingsPage : "main");
     window.addEventListener("popstate", onBack);
     return () => window.removeEventListener("popstate", onBack);
   }, []);
@@ -45,12 +50,13 @@ export function SettingsScreen() {
       .catch(() => setTagCount(null));
   }, [page]);
 
-  const openTags = () => {
-    history.pushState({ settingsPage: "tags" }, "");
-    setPage("tags");
+  const openPage = (sub: Exclude<Page, "main">) => {
+    history.pushState({ settingsPage: sub }, "");
+    setPage(sub);
   };
 
   if (page === "tags") return <TagsScreen onBack={() => history.back()} />;
+  if (page === "transfer") return <TransferScreen onBack={() => history.back()} />;
 
   return (
     <main className="screen with-tabs">
@@ -98,10 +104,18 @@ export function SettingsScreen() {
 
       <ul className="settings-list">
         <li>
-          <button type="button" className="settings-row" onClick={openTags}>
+          <button type="button" className="settings-row" onClick={() => openPage("tags")}>
             <span>Tags</span>
             <span className="settings-value">
               {tagCount ?? ""} <span aria-hidden="true">›</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" className="settings-row" onClick={() => openPage("transfer")}>
+            <span>Export and import</span>
+            <span className="settings-value" aria-hidden="true">
+              ›
             </span>
           </button>
         </li>

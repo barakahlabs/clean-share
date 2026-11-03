@@ -1,6 +1,7 @@
 mod bookmarks;
 mod previews;
 mod settings;
+mod transfer;
 
 use tauri::Manager;
 
@@ -14,6 +15,8 @@ fn clean_text(text: &str) -> link_cleaner::Analysis {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_share_target::init())
         // Thumbnails for the WebView: `convertFileSrc("<id>.jpg", "thumb")` in JS.
         .register_asynchronous_uri_scheme_protocol("thumb", |ctx, request, responder| {
@@ -46,6 +49,8 @@ pub fn run() {
             bookmarks::tag_delete,
             previews::preview_fetch,
             previews::bookmark_preview_retry,
+            transfer::bookmarks_export,
+            transfer::bookmarks_import,
             settings::settings_get,
             settings::settings_set,
         ])
