@@ -22,6 +22,10 @@ impl<R: Runtime> ShareTarget<R> {
     Ok(false)
   }
 
+  pub fn share_file(&self, _payload: ShareFileRequest) -> crate::Result<()> {
+    Err(crate::Error::Unsupported("sharing is only available on Android and iOS"))
+  }
+
   /// Desktop connections are treated as unmetered.
   pub fn is_metered(&self) -> crate::Result<bool> {
     Ok(false)

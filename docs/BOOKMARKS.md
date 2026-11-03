@@ -527,7 +527,29 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
       phase 1: Settings → Tags.)
 
 ### Phase 7 – Import / export
-- [ ] Export JSON (full) and Netscape HTML; import browser HTML, Pocket and Raindrop exports (cleaned).
+- [x] Export JSON (full) and Netscape HTML; import browser HTML, Pocket and Raindrop exports (cleaned).
+
+Settings → **Export and import** (`src/screens/TransferScreen.tsx`, `src-tauri/src/transfer.rs`,
+`crates/bookmarks/src/transfer/`):
+- **Back up bookmarks** writes `clean-share-bookmarks-<date>.json` and opens the share sheet
+  (`shareFile` in `plugins/share-target`: Android via the app's FileProvider, iOS
+  `UIActivityViewController`), so it can go to Files, Drive, mail. Format
+  `clean-share/bookmarks` v1: every bookmark's link, original link, title, note, tags with their
+  source, shared text, description, site and dates. A backup from a newer app version is
+  refused with "update the app first".
+- **Export for a browser** writes Netscape bookmark HTML: one "Clean Share" folder, tags in
+  `TAGS` (Firefox reads them), notes as `<DD>`.
+- **Import a file** opens the system file picker (`tauri-plugin-dialog`; read with
+  `tauri-plugin-fs`, which handles Android `content://`). The format is found from the content:
+  our JSON; bookmark HTML (Chrome, Firefox, Safari, Edge, Pocket's `ril_export.html`, Raindrop),
+  where the innermost folder becomes a tag except the browsers' own (Bookmarks bar, Other
+  bookmarks, …); CSV from Pocket (`|` tags, Unix time) or Raindrop (collection as tag, ISO
+  dates), or any CSV with a `url` column.
+- Every link is cleaned like a share; an already saved link is merged (new tags added, title and
+  note only filled if empty); original dates are kept; non-web links (bookmarklets) are skipped.
+  The screen reports new / already saved / skipped. With previews on, new bookmarks are queued.
+- Each imported bookmark is its own save: 2000 take ~6 s on a laptop (release build). Batching in
+  one transaction is the next step if phones are slow with big files.
 
 ### Phase 8 – Accounts and paid sync
 - [ ] Pick auth provider (Clerk or Auth0); Sign in with Apple and Google.

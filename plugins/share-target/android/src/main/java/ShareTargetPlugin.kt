@@ -5,6 +5,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
+import androidx.core.content.FileProvider
+import java.io.File
 import android.os.Build
 import android.webkit.WebView
 import app.tauri.annotation.Command
@@ -13,6 +15,12 @@ import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
+
+@InvokeArg
+class ShareFileArgs {
+    lateinit var path: String
+    lateinit var mimeType: String
+}
 
 @InvokeArg
 class ShareTextArgs {
@@ -82,6 +90,31 @@ class ShareTargetPlugin(private val activity: Activity) : Plugin(activity) {
             val result = JSObject()
             result.put("returned", activity.moveTaskToBack(true))
             invoke.resolve(result)
+        }
+    }
+
+    /**
+     * Opens the share sheet with a file from the app's cache dir. Uses the FileProvider that
+     * Tauri's Android template declares (`<package>.fileprovider`, whose paths include the cache
+     * dir); a second provider here would clash with it in the manifest merge.
+     */
+    @Command
+    fun shareFile(invoke: Invoke) {
+        val args = invoke.parseArgs(ShareFileArgs::class.java)
+        val uri = try {
+            FileProvider.getUriForFile(activity, "${activity.packageName}.fileprovider", File(args.path))
+        } catch (e: IllegalArgumentException) {
+            invoke.reject("Can't share ${args.path}: ${e.message}")
+            return
+        }
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = args.mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        activity.runOnUiThread {
+            activity.startActivity(Intent.createChooser(send, null))
+            invoke.resolve()
         }
     }
 

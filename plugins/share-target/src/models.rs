@@ -37,3 +37,10 @@ pub enum ShareIntent {
 pub struct MeteredResponse {
   pub metered: bool,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShareFileRequest {
+  pub path: String,
+  pub mime_type: String,
+}
