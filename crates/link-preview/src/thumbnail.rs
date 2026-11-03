@@ -6,8 +6,9 @@ use image::{ImageReader, codecs::jpeg::JpegEncoder, imageops::FilterType};
 
 use crate::{Error, Result};
 
-/// Longest side of a thumbnail, in pixels: sharp in a list on a high-density screen.
-pub const THUMBNAIL_SIZE: u32 = 400;
+/// Longest side of a thumbnail, in pixels: sharp across a phone's width on a high-density screen
+/// (the detail screen), so the cards' smaller version is sharp too.
+pub const THUMBNAIL_SIZE: u32 = 800;
 
 /// JPEG quality: small files, no visible loss at this size.
 const QUALITY: u8 = 80;
