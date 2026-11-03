@@ -4,6 +4,11 @@ import Tauri
 import UIKit
 import WebKit
 
+class ShareFileArgs: Decodable {
+  let path: String
+  let mimeType: String
+}
+
 class ShareTextArgs: Decodable {
   let text: String
 }
@@ -55,6 +60,11 @@ class ShareTargetPlugin: Plugin {
     // Share links as URLs so the share sheet offers link-specific actions.
     let item: Any = URL(string: args.text).flatMap { ["http", "https"].contains($0.scheme) ? $0 : nil } ?? args.text
 
+    present(item: item, invoke: invoke)
+  }
+
+  /// Shows the system share sheet for one item, on top of whatever is showing.
+  private func present(item: Any, invoke: Invoke) {
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
       guard var viewController = self.webview?.window?.rootViewController else {
@@ -76,6 +86,13 @@ class ShareTargetPlugin: Plugin {
   }
 
   /// iOS has no API to go back to the app that shared; the user switches back themselves.
+  /// Opens the share sheet with a file (an export), so it can be saved to Files, sent, …
+  @objc public func shareFile(_ invoke: Invoke) throws {
+    let args = try invoke.parseArgs(ShareFileArgs.self)
+    let url = URL(fileURLWithPath: args.path)
+    present(item: url, invoke: invoke)
+  }
+
   @objc public func returnToSource(_ invoke: Invoke) {
     invoke.resolve(["returned": false])
   }
