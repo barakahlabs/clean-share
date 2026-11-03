@@ -21,8 +21,9 @@ export type Player = {
  * iOS serves the app from `tauri://localhost`, so an embedded YouTube player gets no `https`
  * referrer and refuses to play (error 153). There, YouTube opens in its app instead. Backlog: a
  * native player sheet (WKWebView with an https base URL) to play it inline (docs/BOOKMARKS.md).
+ * Decided at build time: the Tauri CLI sets TAURI_ENV_PLATFORM for the iOS build.
  */
-const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const IOS = import.meta.env.TAURI_ENV_PLATFORM === "ios";
 
 const VIDEO = 16 / 9;
 
