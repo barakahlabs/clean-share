@@ -8,8 +8,9 @@ fn content(text: &str, provider: Option<&str>) -> Content {
   Content { text: text.into(), provider: provider.map(Into::into), ..Default::default() }
 }
 
-fn page(keywords: &[&str], kind: Option<&str>) -> Content {
+fn page(text: &str, keywords: &[&str], kind: Option<&str>) -> Content {
   Content {
+    text: text.into(),
     keywords: keywords.iter().map(|k| k.to_string()).collect(),
     kind: kind.map(Into::into),
     ..Default::default()
@@ -140,14 +141,15 @@ fn nothing_to_go_on_means_no_suggestions() {
 #[test]
 fn page_keywords_that_match_existing_tags_rank_high() {
   let history = History { tags: tags(&[("Pasta", 3), ("weeknight", 1)]), ..Default::default() };
-  let got = suggest(&page(&["pastas", "Italian"], None), &history, &[]);
+  let got = suggest(&page("Classic Italian lasagna", &["pastas", "Italian"], None), &history, &[]);
   assert_eq!(got, [("Pasta".into(), Reason::Page), ("Italian".into(), Reason::Page)]);
 }
 
 #[test]
 fn only_a_few_short_page_keywords_become_new_tags() {
+  let text = "A webdev tutorial: one lesson on app development in 2026";
   let got = suggest(
-    &page(&["2026", "a keyword that is far too long for a tag", "webdev", "tutorial", "lesson", "app development"], None),
+    &page(text, &["2026", "a keyword that is far too long for a tag", "webdev", "tutorial", "lesson", "app development"], None),
     &History::default(),
     &[],
   );
@@ -156,14 +158,21 @@ fn only_a_few_short_page_keywords_become_new_tags() {
 }
 
 #[test]
+fn page_keywords_the_page_never_uses_are_not_offered() {
+  // Allrecipes declares "publisher-tested"; no reader ever sees it.
+  let got = suggest(&page("World's Best Lasagna", &["publisher-tested", "lasagna"], Some("recipe")), &History::default(), &[]);
+  assert_eq!(names(&got), ["recipe", "lasagna"]);
+}
+
+#[test]
 fn the_page_kind_suggests_a_tag() {
   assert_eq!(
-    suggest(&page(&[], Some("recipe")), &History::default(), &[]),
+    suggest(&page("", &[], Some("recipe")), &History::default(), &[]),
     [("recipe".into(), Reason::Page)]
   );
   assert_eq!(
-    suggest(&page(&[], Some("product")), &History::default(), &[]),
+    suggest(&page("", &[], Some("product")), &History::default(), &[]),
     [("shopping".into(), Reason::Page)]
   );
-  assert!(suggest(&page(&[], Some("article")), &History::default(), &[]).is_empty());
+  assert!(suggest(&page("", &[], Some("article")), &History::default(), &[]).is_empty());
 }
