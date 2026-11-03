@@ -520,7 +520,23 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
   option is hidden or cloud is offered.
 
 ### Phase 5 – Embeds
-- [ ] `embed_kind` / `embed_url` from providers; "Show embed" for YouTube and X; sandboxed iframe.
+- [x] Tap-to-play players in the detail screen (`src/embeds.ts`, `src/components/EmbedPlayer.tsx`):
+      YouTube (incl. Shorts, via `youtube-nocookie.com`), Vimeo (`dnt=1`), Spotify (track,
+      album, playlist, episode, show, artist), X posts, TikTok, SoundCloud (from the preview's
+      embed link). The player link is worked out from the bookmark's own link, so it works with
+      previews off.
+- Nothing loads until Play is tapped: before that the card shows the picture (or a dark block),
+  a play button and "Plays from YouTube". The iframe is sandboxed (scripts, same origin,
+  presentation, popups; no top navigation), can autoplay and go fullscreen. Cards that can play
+  get a ▶ badge in the grid.
+- **YouTube on iOS opens in the YouTube app** ("Opens in YouTube"): iOS serves the app from
+  `tauri://localhost`, so the embedded player gets no `https` referrer and YouTube refuses it
+  (error 153). An iframe can't fix that (`srcdoc` and `data:` pages send no referrer either, and
+  iOS doesn't let an app serve `https` addresses). Android, and the other sites on iOS, play
+  inline.
+- [ ] Backlog: YouTube inline on iOS with a native player sheet: the share-target plugin opens a
+      WKWebView that loads the player from an HTML string with an `https` base URL (e.g.
+      `https://com.sirajulm.cleanshare`, never fetched), so YouTube gets a referrer.
 
 ### Phase 6 – Organize
 - [ ] Edit screen; `reclean_all` on rules updates with a report. (Tag management moved to

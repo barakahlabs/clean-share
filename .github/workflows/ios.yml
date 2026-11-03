@@ -30,7 +30,10 @@ jobs:
           install_args: node pnpm
 
       - run: pnpm install --frozen-lockfile
+      # Built outside the Tauri CLI, so set what it would: the code branches on it (src/embeds.ts).
       - run: pnpm build
+        env:
+          TAURI_ENV_PLATFORM: ios
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
