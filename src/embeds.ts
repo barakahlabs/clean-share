@@ -13,7 +13,16 @@ export type Player = {
   /** Width / height for video; `null` for a fixed `height` (audio, posts). */
   ratio: number | null;
   height: number;
+  /** Play by opening the link in the site's app (or browser) instead of inline. */
+  external?: boolean;
 };
+
+/**
+ * iOS serves the app from `tauri://localhost`, so an embedded YouTube player gets no `https`
+ * referrer and refuses to play (error 153). There, YouTube opens in its app instead. Backlog: a
+ * native player sheet (WKWebView with an https base URL) to play it inline (docs/BOOKMARKS.md).
+ */
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 const VIDEO = 16 / 9;
 
@@ -40,6 +49,7 @@ export function playerFor(bookmark: Bookmark): Player | null {
       site: "YouTube",
       ratio: shorts ? 9 / 16 : VIDEO,
       height: 0,
+      external: IOS,
     };
   }
   if (host === "vimeo.com" && /^\d+$/.test(path[0] ?? "")) {

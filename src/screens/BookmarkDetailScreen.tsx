@@ -99,6 +99,7 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
                 player={player}
                 poster={thumbnailUrl(bookmark)}
                 title={bookmark.title ?? titleFromLink(bookmark.url)}
+                link={bookmark.url}
               />
             ) : (
               <Thumbnail src={thumbnailUrl(bookmark)} className="detail-image" />
