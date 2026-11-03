@@ -146,23 +146,78 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Combines the page and oEmbed results. oEmbed is the provider's own answer, so it wins for
 /// title, author, thumbnail and site name; the page wins for everything oEmbed doesn't have.
 pub fn merge(url: String, page: Option<Page>, oembed: Option<oembed::OEmbed>) -> Preview {
-  let page = page.unwrap_or_default();
+  let mut page = page.unwrap_or_default();
   let oembed = oembed.unwrap_or_default();
   let oembed_kind = oembed.kind().map(str::to_string);
   let embed = oembed.embed();
+  // A page that refuses us often answers with just the site's name as its title ("Reddit"):
+  // that's not this page's title.
+  if page.title.as_deref().is_some_and(|t| is_brand_only(t, &url)) {
+    page.title = None;
+  }
   Preview {
-    url,
     title: oembed.title.or(page.title),
-    description: page.description,
+    description: page.description.or(oembed.summary),
     site_name: page.site_name.or(oembed.provider_name),
     image_url: oembed.thumbnail_url.or(page.image_url),
     icon_url: page.icon_url,
     author: oembed.author_name.or(page.author),
     kind: page.kind.or(oembed_kind),
     keywords: page.keywords,
-    published: page.published,
+    published: page.published.or(oembed.publication_date),
     language: page.language,
     excerpt: page.excerpt,
     embed,
+    url,
+  }
+}
+
+/// True if `title` is only the site's name, e.g. "Reddit" for `www.reddit.com/r/rust/`.
+fn is_brand_only(title: &str, url: &str) -> bool {
+  let Some(host) = url::Url::parse(url).ok().and_then(|u| u.host_str().map(str::to_ascii_lowercase))
+  else {
+    return false;
+  };
+  // The name before the public suffix: "reddit" in www.reddit.com, "bbc" in www.bbc.co.uk.
+  let labels: Vec<&str> = host.split('.').collect();
+  let n = labels.len();
+  let two_part_suffix = n >= 3
+    && labels[n - 1].len() == 2
+    && matches!(labels[n - 2], "co" | "com" | "org" | "net" | "ac" | "gov");
+  let brand = match (n, two_part_suffix) {
+    (_, true) => labels[n - 3],
+    (2.., false) => labels[n - 2],
+    _ => return false,
+  };
+  title.trim().eq_ignore_ascii_case(brand)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn titles_that_are_just_the_site_name() {
+    assert!(is_brand_only("Reddit", "https://www.reddit.com/r/rust/"));
+    assert!(is_brand_only(" bbc ", "https://www.bbc.co.uk/news"));
+    assert!(!is_brand_only("Reddit - Dive into anything", "https://www.reddit.com/"));
+    assert!(!is_brand_only("Rust", "https://www.reddit.com/r/rust/"));
+    assert!(!is_brand_only("Reddit", "not a url"));
+  }
+
+  #[test]
+  fn a_brand_only_page_title_gives_way() {
+    let page = Page { title: Some("Reddit".into()), ..Default::default() };
+    assert_eq!(merge("https://www.reddit.com/r/rust/".into(), Some(page), None).title, None);
+  }
+
+  #[test]
+  fn oembed_summary_and_date_fill_in_for_a_blocked_page() {
+    let o = oembed::parse(include_bytes!("../tests/fixtures/nytimes-oembed.json")).unwrap();
+    let p = merge("https://www.nytimes.com/2026/11/03/technology/binance-hack-report.html".into(), None, Some(o));
+    assert!(p.description.unwrap().starts_with("A report from"));
+    assert_eq!(p.published.as_deref(), Some("November 3, 2026"));
+    assert_eq!(p.kind.as_deref(), Some("article"));
+    assert_eq!(p.site_name.as_deref(), Some("The New York Times"));
   }
 }

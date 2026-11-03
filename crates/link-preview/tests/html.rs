@@ -108,3 +108,10 @@ fn no_excerpt_when_the_text_is_mostly_links() {
   let p = parse_html(html, &Url::parse("https://app.example/").unwrap());
   assert_eq!(p.excerpt, None);
 }
+
+#[test]
+fn text_escaped_twice_is_decoded() {
+  let html = r#"<head><meta property="og:description" content="Clippy&amp;#39;s check &amp;amp; more &amp;#x2014; done"></head>"#;
+  let p = parse_html(html, &Url::parse("https://github.com/a/b").unwrap());
+  assert_eq!(p.description.as_deref(), Some("Clippy's check & more — done"));
+}
