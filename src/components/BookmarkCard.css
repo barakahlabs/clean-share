@@ -123,3 +123,18 @@
 .bookmark-tag.more {
   border-style: dashed;
 }
+
+/* Videos and audio that play in the detail screen. */
+.bookmark-play {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+}

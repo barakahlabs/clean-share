@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { siteIconUrl, thumbnailUrl, type Bookmark } from "../bookmarks";
+import { playerFor } from "../embeds";
 import { hostOf, titleFromLink } from "../format";
 import "./BookmarkCard.css";
 
@@ -22,6 +23,7 @@ export function BookmarkCard({ bookmark, onOpen }: Props) {
   useEffect(() => setLoaded(false), [src]);
   useEffect(() => setIconLoaded(false), [icon]);
   const extraTags = bookmark.tags.length - MAX_TAGS;
+  const playable = playerFor(bookmark) !== null;
 
   return (
     <button type="button" className="bookmark-card" onClick={onOpen}>
@@ -48,6 +50,13 @@ export function BookmarkCard({ bookmark, onOpen }: Props) {
             className={loaded ? "bookmark-image loaded" : "bookmark-image"}
             onLoad={() => setLoaded(true)}
           />
+        )}
+        {playable && (
+          <span className="bookmark-play" aria-label="Can play here">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path d="M8 5.5v13l11-6.5z" fill="currentColor" />
+            </svg>
+          </span>
         )}
       </span>
       <span className="bookmark-body">

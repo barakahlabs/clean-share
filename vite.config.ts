@@ -8,6 +8,10 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [react()],
 
+  // The Tauri CLI sets TAURI_ENV_PLATFORM ("ios", "android", …) and friends when it runs the
+  // build: expose them so the code can branch per platform at build time (import.meta.env).
+  envPrefix: ["VITE_", "TAURI_ENV_"],
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
