@@ -62,6 +62,24 @@ impl Store {
     Ok(())
   }
 
+  /// Records a failed fetch. A bookmark that already has a preview keeps it (status back to
+  /// `done`): a retry that times out shouldn't take away a good preview. Otherwise `failed`.
+  pub async fn preview_failed(&mut self, id: &str) -> Result<()> {
+    let changed = self
+      .conn
+      .execute(
+        "UPDATE bookmark SET preview_status =
+           CASE WHEN preview_fetched_at IS NULL THEN 'failed' ELSE 'done' END
+         WHERE id = ?1",
+        [id],
+      )
+      .await?;
+    if changed == 0 {
+      return Err(Error::NotFound);
+    }
+    Ok(())
+  }
+
   /// Bookmarks waiting for a preview, newest first: `(id, url)`.
   pub async fn preview_queue(&self, limit: u32) -> Result<Vec<(String, String)>> {
     let mut rows = self

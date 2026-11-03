@@ -583,3 +583,20 @@ async fn a_version_1_database_keeps_its_bookmarks_when_migrated() {
   assert_eq!((b.page_kind, b.excerpt), (None, None));
   assert_eq!(search(&store, "old").await, ["https://old.example/"]);
 }
+
+#[tokio::test]
+async fn a_failed_retry_keeps_the_preview_it_had() {
+  let mut store = store().await;
+  let fresh = store.save(new("https://a.example/1", &[])).await.unwrap().bookmark;
+  let had = store.save(new("https://b.example/2", &[])).await.unwrap().bookmark;
+  store.set_preview(&had.id, &preview("Old preview", &[], "article")).await.unwrap();
+
+  store.preview_failed(&fresh.id).await.unwrap();
+  store.set_preview_status(&had.id, PreviewStatus::Pending).await.unwrap();
+  store.preview_failed(&had.id).await.unwrap();
+
+  assert_eq!(store.get(&fresh.id).await.unwrap().unwrap().preview_status, PreviewStatus::Failed);
+  let kept = store.get(&had.id).await.unwrap().unwrap();
+  assert_eq!(kept.preview_status, PreviewStatus::Done);
+  assert_eq!(kept.title.as_deref(), Some("Old preview"));
+}
