@@ -13,6 +13,7 @@
 }
 
 .settings-row {
+  box-sizing: border-box;
   width: 100%;
   display: flex;
   align-items: center;
@@ -33,4 +34,57 @@
 
 .settings-value {
   color: var(--muted);
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-note {
+  margin: 0 4px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.settings-error {
+  color: var(--danger);
+}
+
+/* An on/off switch drawn from a checkbox, so it stays a native, accessible control. */
+.settings-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  position: relative;
+  width: 48px;
+  height: 28px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.settings-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+
+.settings-switch:checked {
+  background: var(--text);
+}
+
+.settings-switch:checked::after {
+  transform: translateX(20px);
 }

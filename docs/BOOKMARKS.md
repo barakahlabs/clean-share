@@ -479,14 +479,18 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
 
 ### Phase 3 – Preview cards
 - [x] `previews` setting (backend: `settings_get` / `settings_set`).
-- [ ] Settings screen switch.
+- [x] Settings screen switch, with a note that it's the only thing that goes online.
 - [x] `crates/link-preview`: oEmbed (no-key providers + discovery), Open Graph, JSON-LD, keywords,
       kind, excerpt, icons, limits, fixtures and local-server tests.
 - [x] Migration: keywords, kind, excerpt, author, published, icon (description, image, site name
       already had columns).
 - [x] Background fetch queue, thumbnail cache, `preview_status`, retry command.
 - [x] Page keywords, kind, description and excerpt feed tag suggestions (new `page` reason).
-- [ ] Cards in list and detail; description added to FTS and to tag suggestions.
+- [x] Cards in list (72 px thumbnail, site name) and detail (picture, description, author,
+      publish date, "Fetching preview…" / Retry); refreshed by the `bookmark-preview` event.
+- [x] Save sheet: fetches the preview while open (site and description, fills an empty title,
+      better suggestions); no picture before the thumbnail is saved.
+- [x] Description in search (already in the FTS index) and in tag suggestions.
 - **Done when:** with previews on, YouTube and article links show title + thumbnail offline after
   saving; with previews off, no request is made (checked with a proxy).
 

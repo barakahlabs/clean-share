@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import {
+  fetchPreview,
   listTags,
   prepareBookmark,
   saveBookmark,
   setBookmarkTags,
   suggestTags,
   updateBookmark,
+  type LinkPreview,
   type Prepared,
   type Suggestion,
   type TagCount,
@@ -31,6 +33,11 @@ type Props = {
  *
  * Suggested tags show as chips under the tag field and update as tags are picked. A tag taken
  * from a suggestion is saved with source "suggested".
+ *
+ * With link previews on, a new link's preview is fetched while the sheet is open: it shows the
+ * site, title and description, fills an empty title, and improves the suggestions (page keywords
+ * and kind). The background fetcher reuses it after saving. No image here: pictures are only
+ * shown from the phone, once the thumbnail is saved.
  */
 export function SaveBookmarkSheet({ text, onDone }: Props) {
   const [prepared, setPrepared] = useState<Prepared | null>(null);
@@ -43,6 +50,9 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
   const [sources, setSources] = useState<Record<string, TagSource>>({});
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [settledTitle, setSettledTitle] = useState("");
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [preview, setPreview] = useState<LinkPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +81,26 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
   const link = prepared?.links[0];
   const existing = prepared?.existing ?? null;
 
+  // New links only: a saved bookmark already has its preview (or a Retry on its screen).
+  useEffect(() => {
+    if (!link || existing) return;
+    let current = true;
+    setPreviewLoading(true);
+    fetchPreview(text)
+      .then((found) => current && setPreview(found))
+      .catch(() => {})
+      .finally(() => current && setPreviewLoading(false));
+    return () => {
+      current = false;
+    };
+  }, [link, existing, text]);
+
+  // The page's title, unless one came with the share or the user typed one.
+  useEffect(() => {
+    if (preview?.title && !titleTouched && !title.trim()) setTitle(preview.title);
+    // Runs only when the preview arrives, not on every keystroke.
+  }, [preview]);
+
   useEffect(() => {
     const timer = setTimeout(() => setSettledTitle(title.trim()), TITLE_DELAY_MS);
     return () => clearTimeout(timer);
@@ -86,7 +116,8 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
     return () => {
       current = false;
     };
-  }, [link, text, settledTitle, tags]);
+    // `preview`: once it arrives, the backend has the page's keywords and kind.
+  }, [link, text, settledTitle, tags, preview]);
 
   // Tags added by typing or from the dropdown are the user's own.
   const changeTags = (next: string[]) => {
@@ -147,6 +178,13 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
               </p>
             )}
             {existing && <p className="save-hint">Already saved. Changes update this bookmark.</p>}
+            {previewLoading && !preview && <p className="save-hint">Loading preview…</p>}
+            {preview && (preview.siteName || preview.description) && (
+              <div className="save-preview">
+                {preview.siteName && <span className="save-preview-site">{preview.siteName}</span>}
+                {preview.description && <span className="save-preview-text">{preview.description}</span>}
+              </div>
+            )}
 
             <label className="save-field">
               <span className="save-label">Title</span>
@@ -155,7 +193,10 @@ export function SaveBookmarkSheet({ text, onDone }: Props) {
                 value={title}
                 placeholder={link?.cleaned ?? "Title"}
                 enterKeyHint="done"
-                onChange={(event) => setTitle(event.target.value)}
+                onChange={(event) => {
+                  setTitleTouched(true);
+                  setTitle(event.target.value);
+                }}
               />
             </label>
 

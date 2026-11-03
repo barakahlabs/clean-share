@@ -1,4 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 // Typed wrappers for the bookmarks commands (src-tauri/src/bookmarks.rs → crates/bookmarks).
 // Shapes match the Rust types in crates/bookmarks/src/model.rs (serde camelCase).
@@ -24,6 +25,13 @@ export type Bookmark = {
   imageUrl: string | null;
   embedKind: string | null;
   embedUrl: string | null;
+  /** From the preview: "recipe", "article", "video"… */
+  pageKind: string | null;
+  keywords: string[];
+  author: string | null;
+  published: string | null;
+  iconUrl: string | null;
+  excerpt: string | null;
   previewStatus: "none" | "pending" | "done" | "failed";
   previewFetchedAt: number | null;
   rulesRevision: string;
@@ -101,6 +109,48 @@ export function deleteBookmark(id: string): Promise<void> {
 /** Every tag with its bookmark count, most used first. */
 export function listTags(): Promise<TagCount[]> {
   return invoke("tag_list");
+}
+
+/** What a link preview found (crates/link-preview). Links are already cleaned. */
+export type LinkPreview = {
+  url: string;
+  title: string | null;
+  description: string | null;
+  siteName: string | null;
+  imageUrl: string | null;
+  iconUrl: string | null;
+  author: string | null;
+  kind: string | null;
+  keywords: string[];
+  published: string | null;
+  language: string | null;
+  excerpt: string | null;
+  embed: { kind: string; url: string | null } | null;
+};
+
+/** The preview for the first link in shared text, before saving; `null` with previews off. */
+export function fetchPreview(text: string): Promise<LinkPreview | null> {
+  return invoke("preview_fetch", { text });
+}
+
+/** Queues a bookmark's preview again (e.g. after it failed). */
+export function retryPreview(id: string): Promise<void> {
+  return invoke("bookmark_preview_retry", { id });
+}
+
+/** The bookmark's thumbnail on the phone, or null if it has none. The fetch time in the URL
+ * makes a retried preview's new thumbnail show instead of a cached old one. */
+export function thumbnailUrl(bookmark: Bookmark): string | null {
+  if (bookmark.previewStatus !== "done" || !bookmark.imageUrl) return null;
+  return `${convertFileSrc(`${bookmark.id}.jpg`, "thumb")}?v=${bookmark.previewFetchedAt ?? 0}`;
+}
+
+/** Calls `onDone` with a bookmark's id whenever its preview is fetched (or fails). */
+export function onPreview(onDone: (id: string) => void): () => void {
+  const stop = listen<string>("bookmark-preview", (event) => onDone(event.payload));
+  return () => {
+    stop.then((unlisten) => unlisten()).catch(() => {});
+  };
 }
 
 /** Tags to suggest for the bookmark on the save sheet, best first. */
