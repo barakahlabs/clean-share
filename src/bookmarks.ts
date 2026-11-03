@@ -145,10 +145,10 @@ export function thumbnailUrl(bookmark: Bookmark): string | null {
   return `${convertFileSrc(`${bookmark.id}.jpg`, "thumb")}?v=${bookmark.previewFetchedAt ?? 0}`;
 }
 
-/** The site's icon saved on the phone, for bookmarks without a picture. The file may not
- * exist (a site without one, or the bookmark has a picture instead): hide the image on error. */
+/** The site's icon saved on the phone, for bookmarks without a picture (also kept when the
+ * page itself failed, e.g. 404). The file may not exist: hide the image on error. */
 export function siteIconUrl(bookmark: Bookmark): string | null {
-  if (bookmark.previewStatus !== "done") return null;
+  if (bookmark.previewStatus !== "done" && bookmark.previewStatus !== "failed") return null;
   return `${convertFileSrc(`${bookmark.id}-icon.png`, "thumb")}?v=${bookmark.previewFetchedAt ?? 0}`;
 }
 
