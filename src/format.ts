@@ -31,6 +31,8 @@ export function titleFromLink(url: string) {
     .map((part) => safeDecode(part).replace(/\.(html?|php|aspx?)$/i, ""))
     .filter(Boolean);
   if (parts.length === 0) return parsed.host.replace(/^www\./, "");
+  // Video pages keep their ID in the query (`/watch?v=…`); the path says nothing.
+  if (/(^|\.)(youtube\.com|youtu\.be)$/.test(parsed.host)) return "YouTube video";
 
   const words = (part: string) => part.replace(/[-_+]+/g, " ").trim();
   const n = parts.length;

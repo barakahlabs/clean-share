@@ -161,6 +161,26 @@ impl Previews {
         self.keep(id, ICON, icon.ok());
     }
 
+    /// After a failed fetch (e.g. the page is gone): the site's icon, from its homepage's
+    /// declared icons, else its `/favicon.ico`. Not if the bookmark already has a picture or icon
+    /// from an earlier preview, which it keeps.
+    async fn store_site_icon(&self, id: &str, page_url: &str) {
+        let has_picture = [THUMB, ICON].iter().any(|s| self.file(id, s).is_some_and(|p| p.exists()));
+        let Some(home) = origin(page_url) else { return };
+        if has_picture {
+            return;
+        }
+        let declared = match self.fetch(&format!("{home}/")).await {
+            Ok(preview) => preview.icon_url,
+            Err(_) => None,
+        };
+        for url in declared.into_iter().chain(favicon(page_url)) {
+            if let Ok(png) = self.picture(&url, |b| link_preview::icon(b, ICON_SIZE)).await {
+                return self.keep(id, ICON, Some(png));
+            }
+        }
+    }
+
     /// Downloads an image and converts it (off the async threads: decoding is CPU work).
     async fn picture(
         &self,
@@ -197,10 +217,15 @@ impl Previews {
 const THUMB: &str = ".jpg";
 const ICON: &str = "-icon.png";
 
+/// `https://blog.rust-lang.org` for any page on it.
+fn origin(page_url: &str) -> Option<String> {
+    let url = tauri::Url::parse(page_url).ok()?;
+    Some(url.origin().ascii_serialization()).filter(|o| o != "null")
+}
+
 /// The site's standard icon, for pages that declare none (or that refused us, like Reddit's).
 fn favicon(page_url: &str) -> Option<String> {
-    let url = tauri::Url::parse(page_url).ok()?;
-    Some(format!("{}/favicon.ico", url.origin().ascii_serialization()))
+    Some(format!("{}/favicon.ico", origin(page_url)?))
 }
 
 /// Starts the worker. It runs for the app's lifetime and sleeps until woken.
@@ -243,8 +268,10 @@ async fn run_queue(app: &AppHandle) {
                 Some(preview) => Ok(preview),
                 None => previews.fetch(&url).await,
             };
-            if let Ok(preview) = &fetched {
-                previews.store_pictures(&id, preview).await;
+            match &fetched {
+                Ok(preview) => previews.store_pictures(&id, preview).await,
+                // The page failed (e.g. 404), but the site usually still has an icon.
+                Err(_) => previews.store_site_icon(&id, &url).await,
             }
             // The store lock is only held for the write, never during network requests.
             let mut guard = library.store.lock().await;

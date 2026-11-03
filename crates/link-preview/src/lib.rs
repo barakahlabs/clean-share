@@ -150,11 +150,19 @@ pub fn merge(url: String, page: Option<Page>, oembed: Option<oembed::OEmbed>) ->
   let oembed = oembed.unwrap_or_default();
   let oembed_kind = oembed.kind().map(str::to_string);
   let embed = oembed.embed();
-  // A page that refuses us often answers with just the site's name as its title ("Reddit"):
-  // that's not this page's title.
-  if page.title.as_deref().is_some_and(|t| is_brand_only(t, &url)) {
+  // A page that refuses us (or a removed video) often answers with just the site's name as its
+  // title ("Reddit", "- YouTube") and the site's stock description and keywords. None of that is
+  // about this link, so without oEmbed to say otherwise, it's dropped.
+  if page.title.as_deref().is_none_or(|t| is_brand_only(t, &url)) {
     page.title = None;
+    if oembed.title.is_none() {
+      page.description = None;
+      page.keywords.clear();
+      page.excerpt = None;
+    }
   }
+  // "Announcing rustup 1.29.3 | Rust Blog" → "Announcing rustup 1.29.3".
+  page.title = page.title.map(|t| without_site_suffix(&t, page.site_name.as_deref(), &url));
   Preview {
     title: oembed.title.or(page.title),
     description: page.description.or(oembed.summary),
@@ -172,24 +180,50 @@ pub fn merge(url: String, page: Option<Page>, oembed: Option<oembed::OEmbed>) ->
   }
 }
 
+/// Title separators around a site's name: "Page | Site", "Page - Site", "Page — Site".
+const SEPARATORS: &[&str] = &[" | ", " - ", " – ", " — ", " · ", " :: "];
+
+/// `title` without a trailing " | Site" when that part names the site: its `og:site_name`, or a
+/// word of the host's name ("Rust Blog" on blog.rust-lang.org). Kept if nothing would be left.
+fn without_site_suffix(title: &str, site_name: Option<&str>, url: &str) -> String {
+  let Some((head, tail)) = SEPARATORS.iter().filter_map(|sep| title.rsplit_once(sep)).max_by_key(|(head, _)| head.len()) else {
+    return title.to_string();
+  };
+  let tail_lower = tail.trim().to_lowercase();
+  let names_site = site_name.is_some_and(|s| s.trim().eq_ignore_ascii_case(&tail_lower))
+    || brand(url).is_some_and(|brand| {
+      brand.split('-').filter(|w| w.len() >= 3).any(|w| tail_lower.split_whitespace().any(|t| t == w))
+    });
+  if names_site && tail.split_whitespace().count() <= 4 && !head.trim().is_empty() {
+    head.trim().to_string()
+  } else {
+    title.to_string()
+  }
+}
+
 /// True if `title` is only the site's name, e.g. "Reddit" for `www.reddit.com/r/rust/`.
 fn is_brand_only(title: &str, url: &str) -> bool {
-  let Some(host) = url::Url::parse(url).ok().and_then(|u| u.host_str().map(str::to_ascii_lowercase))
-  else {
-    return false;
-  };
+  let Some(brand) = brand(url) else { return false };
+  // "- YouTube", "Reddit |": a site's title with the page's part left empty.
+  let title = title.trim_matches(|c: char| c.is_whitespace() || matches!(c, '-' | '–' | '—' | '|' | '·' | ':'));
+  title.eq_ignore_ascii_case(&brand)
+}
+
+/// The site's name from its host: "reddit" for www.reddit.com, "bbc" for www.bbc.co.uk,
+/// "rust-lang" for blog.rust-lang.org.
+fn brand(url: &str) -> Option<String> {
+  let host = url::Url::parse(url).ok()?.host_str()?.to_ascii_lowercase();
   // The name before the public suffix: "reddit" in www.reddit.com, "bbc" in www.bbc.co.uk.
   let labels: Vec<&str> = host.split('.').collect();
   let n = labels.len();
   let two_part_suffix = n >= 3
     && labels[n - 1].len() == 2
     && matches!(labels[n - 2], "co" | "com" | "org" | "net" | "ac" | "gov");
-  let brand = match (n, two_part_suffix) {
-    (_, true) => labels[n - 3],
-    (2.., false) => labels[n - 2],
-    _ => return false,
-  };
-  title.trim().eq_ignore_ascii_case(brand)
+  match (n, two_part_suffix) {
+    (_, true) => Some(labels[n - 3].to_string()),
+    (2.., false) => Some(labels[n - 2].to_string()),
+    _ => None,
+  }
 }
 
 #[cfg(test)]
@@ -200,6 +234,7 @@ mod tests {
   fn titles_that_are_just_the_site_name() {
     assert!(is_brand_only("Reddit", "https://www.reddit.com/r/rust/"));
     assert!(is_brand_only(" bbc ", "https://www.bbc.co.uk/news"));
+    assert!(is_brand_only("- YouTube", "https://www.youtube.com/watch?v=abc123"));
     assert!(!is_brand_only("Reddit - Dive into anything", "https://www.reddit.com/"));
     assert!(!is_brand_only("Rust", "https://www.reddit.com/r/rust/"));
     assert!(!is_brand_only("Reddit", "not a url"));
@@ -209,6 +244,36 @@ mod tests {
   fn a_brand_only_page_title_gives_way() {
     let page = Page { title: Some("Reddit".into()), ..Default::default() };
     assert_eq!(merge("https://www.reddit.com/r/rust/".into(), Some(page), None).title, None);
+  }
+
+  #[test]
+  fn a_page_without_its_own_title_has_only_the_sites_stock_text() {
+    // A removed YouTube video: empty title, YouTube's own description and keywords.
+    let page = Page {
+      title: Some("- YouTube".into()),
+      description: Some("Enjoy the videos and music you love, upload original content".into()),
+      keywords: vec!["video".into(), "upload".into()],
+      icon_url: Some("https://www.youtube.com/favicon.ico".into()),
+      ..Default::default()
+    };
+    let p = merge("https://www.youtube.com/watch?v=gone".into(), Some(page), None);
+    assert_eq!((p.title, p.description), (None, None));
+    assert!(p.keywords.is_empty());
+    // The icon is still the site's.
+    assert_eq!(p.icon_url.as_deref(), Some("https://www.youtube.com/favicon.ico"));
+  }
+
+  #[test]
+  fn the_sites_name_is_taken_off_the_end_of_a_title() {
+    let url = "https://blog.rust-lang.org/2026/11/03/Rustup-1.29.3/";
+    assert_eq!(without_site_suffix("Announcing rustup 1.29.3 | Rust Blog", None, url), "Announcing rustup 1.29.3");
+    assert_eq!(
+      without_site_suffix("City opens bike lanes - The Guardian", Some("The Guardian"), "https://www.theguardian.com/x"),
+      "City opens bike lanes"
+    );
+    // Not the site's name: kept.
+    assert_eq!(without_site_suffix("Cats | Dogs", None, url), "Cats | Dogs");
+    assert_eq!(without_site_suffix("Rust Blog", None, url), "Rust Blog");
   }
 
   #[test]
