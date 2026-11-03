@@ -12,7 +12,7 @@ import { getSettings } from "../settings";
 import { Thumbnail } from "../components/Thumbnail";
 import { shareText } from "../shareTarget";
 import { ConfirmSheet } from "../components/ConfirmSheet";
-import { formatDate, hostOf } from "../format";
+import { formatDate, hostOf, titleFromLink } from "../format";
 import { SaveBookmarkSheet } from "./SaveBookmarkSheet";
 import "./Screen.css";
 import "./BookmarkDetailScreen.css";
@@ -86,7 +86,7 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
         <>
           <section className="detail-card">
             <Thumbnail src={thumbnailUrl(bookmark)} className="detail-image" />
-            <h1 className="detail-title">{bookmark.title ?? hostOf(bookmark.url)}</h1>
+            <h1 className="detail-title">{bookmark.title ?? titleFromLink(bookmark.url)}</h1>
             {bookmark.description && <p className="detail-description">{bookmark.description}</p>}
             <p className="detail-url">{bookmark.url}</p>
             <p className="detail-meta">

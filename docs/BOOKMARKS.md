@@ -191,7 +191,7 @@ setting               not yet: added by a migration when the first synced prefer
 ```
 
 - **Thumbnails** (phase 3) are files named after the bookmark ID in the app data dir
-  (`thumbnails/<id>.jpg`, ≤ 400 px, JPEG), not a column. The WebView loads them on the `thumb`
+  (`thumbnails/<id>.jpg`, ≤ 800 px, JPEG), not a column. The WebView loads them on the `thumb`
   URI scheme. Deleting a bookmark deletes its thumbnail.
 - **Preview queue:** `preview_status = 'pending'` rows, newest first (index
   `bookmark_preview_queue`). Saving with previews on queues the bookmark; switching previews on
@@ -305,8 +305,12 @@ background fetch.
 `crates/link-preview` builds a `Preview` from up to three sources, best first:
 
 1. **oEmbed**, for providers that answer without an API key: YouTube, X, TikTok, Spotify, Vimeo,
-   Reddit (posts), SoundCloud, plus any page that links to its own oEmbed JSON. It gives the title,
-   author, thumbnail and the embed player, and works where the page itself blocks fetches (X).
+   Reddit (posts), SoundCloud, the New York Times, plus any page that links to its own oEmbed JSON.
+   It gives the title, author, thumbnail and the embed player, and works where the page itself
+   refuses fetches (X, Reddit, the New York Times). Reddit's has title and author but no picture or
+   text; the New York Times adds its own `summary`, `publication_date` and `asset_type`. A page
+   that refuses us often answers with only the site's name as title ("Reddit"); that title is
+   dropped, and the card shows the link (`reddit.com/r/rust`) instead.
    Meta's oEmbed (Instagram, Facebook, Threads) needs an app token, so those use step 2, which
    works for public Instagram profiles and posts.
 2. **Page metadata**: `og:*`, `twitter:*`, `<title>`, `<meta name="description">`, `keywords` /
@@ -322,7 +326,7 @@ header, footer, scripts or forms; none when most of it is link text, as on pages
 JavaScript). Keywords, kind and excerpt are there for tag suggestions now and on-device AI later
 (phase 4).
 
-**Thumbnail**: download the image (cleaned first: it can carry tracking), resize to ~400 px, store
+**Thumbnail**: download the image (cleaned first: it can carry tracking), resize to ≤ 800 px (sharp across a phone's width), store
 as a file in the app data dir; the list never loads images from the network.
 
 Fetch rules (`link_preview::Config`):
@@ -330,6 +334,10 @@ Fetch rules (`link_preview::Config`):
 - an honest user agent (`CleanShare/<version> (link preview; +<repo>)`): no pretending to be a
   browser or a social network's crawler;
 - `Accept-Language` from the phone's languages, so sites that pick a language by location don't;
+- with **Only on Wi-Fi** (Settings, under Link previews): nothing is fetched on a metered
+  connection (mobile data, a hotspot, iOS Low Data Mode); previews stay queued and go ahead when
+  the app is next brought to the front on Wi-Fi. The check is native (`isMetered` in
+  `plugins/share-target`: Android `ConnectivityManager`, iOS `NWPathMonitor`);
 - 10 s per request; pages read up to 2 MB and parsed as far as they got (metadata is near the top);
   oEmbed JSON over 256 KB and images over 5 MB refused; at most 5 redirects;
 - no private, local or reserved addresses, whether in the link, a redirect, or what DNS returns.
@@ -360,7 +368,9 @@ in). Each reason adds to a tag's score:
   instagram/x/threads/facebook → `social`. Suggested even if the tag doesn't exist yet (accepting
   it creates it); an existing tag with the same singular form is used instead.
 - **Page** (with a preview, phase 3): a page keyword matching an existing tag (2.5); up to 3
-  short keywords offered as new tags (0.75 each: ≤ 3 words, ≤ 25 characters, not just digits); and
+  short keywords offered as new tags (0.75 each: ≤ 3 words, ≤ 25 characters, not just digits, and
+  only if the page's own text uses the words, which leaves out internal labels like Allrecipes'
+  `publisher-tested`); and
   the page kind as a tag (1): recipe, video, music, podcast, book, movie, event, product →
   `shopping`. The page's description and excerpt also count as content. The save sheet's fetched
   preview is used before saving; a saved bookmark's stored preview when editing.
@@ -486,13 +496,18 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
       already had columns).
 - [x] Background fetch queue, thumbnail cache, `preview_status`, retry command.
 - [x] Page keywords, kind, description and excerpt feed tag suggestions (new `page` reason).
-- [x] Cards in list (72 px thumbnail, site name) and detail (picture, description, author,
-      publish date, "Fetching preview…" / Retry); refreshed by the `bookmark-preview` event.
+- [x] Bookmarks as a grid of cards, two per row on a phone (`auto-fill`, min 150 px): picture
+      on top (1.91:1), or a tile with the site's initial in a colour per site; title (3 lines),
+      site, up to 2 tags. Untitled bookmarks show their short link. Detail: picture, description,
+      author, publish date, "Fetching preview…" / Retry. Both refresh on `bookmark-preview`.
+- [x] Only on Wi-Fi; waiting previews resume when the app comes to the front.
 - [x] Save sheet: fetches the preview while open (site and description, fills an empty title,
       better suggestions); no picture before the thumbnail is saved.
 - [x] Description in search (already in the FTS index) and in tag suggestions.
 - **Done when:** with previews on, YouTube and article links show title + thumbnail offline after
-  saving; with previews off, no request is made (checked with a proxy).
+  saving; with previews off, no request is made. Checked on the Android emulator with the app's
+  traffic counters (`dumpsys netstats`): saving three links with previews off, or with Only on
+  Wi-Fi on a metered connection, sent and received 0 bytes.
 
 ### Phase 4 – AI tagging
 - [ ] `plugins/on-device-ai` (Swift Foundation Models, Kotlin ML Kit GenAI), availability check.
