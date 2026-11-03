@@ -21,6 +21,9 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+# Import: the system file picker, and reading what it returns (Android content:// URIs too).
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
 tauri-plugin-share-target = { path = "../plugins/share-target" }
 link-cleaner = { path = "../crates/link-cleaner" }
 bookmarks = { path = "../crates/bookmarks" }
