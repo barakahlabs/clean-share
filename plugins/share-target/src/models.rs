@@ -32,3 +32,8 @@ pub enum ShareIntent {
   /// "Save bookmark": clean the link and save it.
   Save,
 }
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct MeteredResponse {
+  pub metered: bool,
+}

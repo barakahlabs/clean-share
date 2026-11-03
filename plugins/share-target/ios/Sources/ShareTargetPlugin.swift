@@ -1,3 +1,4 @@
+import Network
 import SwiftRs
 import Tauri
 import UIKit
@@ -26,8 +27,12 @@ class ShareTargetPlugin: Plugin {
 
   private var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
 
+  /// Keeps `currentPath` up to date for isMetered once started.
+  private let pathMonitor = NWPathMonitor()
+
   override func load(webview: WKWebView) {
     self.webview = webview
+    pathMonitor.start(queue: DispatchQueue(label: "share-target.network"))
     becameActiveObserver = NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,
@@ -73,6 +78,14 @@ class ShareTargetPlugin: Plugin {
   /// iOS has no API to go back to the app that shared; the user switches back themselves.
   @objc public func returnToSource(_ invoke: Invoke) {
     invoke.resolve(["returned": false])
+  }
+
+  /// Whether the current connection is metered: mobile data or a hotspot ("expensive"), Low
+  /// Data Mode ("constrained"), or no connection.
+  @objc public func isMetered(_ invoke: Invoke) {
+    let path = pathMonitor.currentPath
+    let metered = path.status != .satisfied || path.isExpensive || path.isConstrained
+    invoke.resolve(["metered": metered])
   }
 
   @objc public func getShared(_ invoke: Invoke) {

@@ -2,7 +2,9 @@ package com.cleanshare.sharetarget
 
 import android.app.Activity
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.os.Build
 import android.webkit.WebView
 import app.tauri.annotation.Command
@@ -81,6 +83,15 @@ class ShareTargetPlugin(private val activity: Activity) : Plugin(activity) {
             result.put("returned", activity.moveTaskToBack(true))
             invoke.resolve(result)
         }
+    }
+
+    /** Whether the current connection is metered (mobile data, a hotspot) or there's none. */
+    @Command
+    fun isMetered(invoke: Invoke) {
+        val connectivity = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val result = JSObject()
+        result.put("metered", connectivity.activeNetwork == null || connectivity.isActiveNetworkMetered)
+        invoke.resolve(result)
     }
 
     @Command

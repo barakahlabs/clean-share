@@ -40,6 +40,16 @@ impl<R: Runtime> ShareTarget<R> {
       .map_err(Into::into)
   }
 
+  /// Whether the phone's current connection is metered (mobile data, a hotspot, Low Data
+  /// Mode) or there's none.
+  pub fn is_metered(&self) -> crate::Result<bool> {
+    self
+      .0
+      .run_mobile_plugin::<MeteredResponse>("isMetered", ())
+      .map(|response| response.metered)
+      .map_err(Into::into)
+  }
+
   pub fn get_shared(&self) -> crate::Result<SharedContent> {
     self
       .0

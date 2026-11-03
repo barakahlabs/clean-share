@@ -1,5 +1,7 @@
 //! Link previews for bookmarks: a background worker that fetches them (with `crates/link-preview`),
-//! makes thumbnails, and stores the result. Only runs while Settings → previews is on.
+//! makes thumbnails, and stores the result. Only runs while Settings → previews is on, and with
+//! "Wi-Fi only" only on unmetered connections (otherwise previews stay queued until the app is
+//! next brought to the front on Wi-Fi).
 //!
 //! - Saving a bookmark (previews on) marks it pending and wakes the worker.
 //! - The worker takes pending bookmarks newest first, one at a time, and emits
@@ -16,11 +18,12 @@ use tauri::{
     AppHandle, Emitter, Manager, State,
     http::{Response, StatusCode, header},
 };
+use tauri_plugin_share_target::ShareTargetExt;
 use tokio::sync::Notify;
 
 use crate::{
     bookmarks::{CommandError, CommandResult, Library},
-    settings::SettingsState,
+    settings::{Settings, SettingsState},
 };
 
 /// Previews fetched for the save sheet, kept until the bookmark is saved (or pushed out).
@@ -174,13 +177,19 @@ pub fn start(app: AppHandle) {
     });
 }
 
-/// Works through the pending bookmarks until none are left (or previews get switched off).
+/// True if previews may go online now: switched on, and on Wi-Fi when that's asked for.
+fn may_fetch(app: &AppHandle, settings: &Settings) -> bool {
+    settings.previews
+        && !(settings.previews_wifi_only && app.share_target().is_metered().unwrap_or(true))
+}
+
+/// Works through the pending bookmarks until none are left, or previews may not go online.
 async fn run_queue(app: &AppHandle) {
     let previews = app.state::<Previews>();
     let library = app.state::<Library>();
     let settings = app.state::<SettingsState>();
     loop {
-        if !settings.get().previews {
+        if !may_fetch(app, &settings.get()) {
             return;
         }
         let batch = match library.store.lock().await.as_ref() {
@@ -210,7 +219,7 @@ async fn run_queue(app: &AppHandle) {
                 Ok(preview) => store.set_preview(&id, &preview_data(preview)).await.map(|_| ()),
                 Err(reason) => {
                     eprintln!("preview for {url} failed: {reason}");
-                    store.set_preview_status(&id, PreviewStatus::Failed).await
+                    store.preview_failed(&id).await
                 }
             };
             drop(guard);
@@ -283,14 +292,16 @@ fn accept_language() -> Option<String> {
 }
 
 /// Fetches a preview for the save sheet, before saving: the first link in `text`. Returns
-/// `None` when previews are off. The worker reuses it once the bookmark is saved.
+/// `None` when previews are off (or Wi-Fi only on mobile data). The worker reuses it once the
+/// bookmark is saved.
 #[tauri::command]
 pub async fn preview_fetch(
+    app: AppHandle,
     previews: State<'_, Previews>,
     settings: State<'_, SettingsState>,
     text: String,
 ) -> CommandResult<Option<Preview>> {
-    if !settings.get().previews {
+    if !may_fetch(&app, &settings.get()) {
         return Ok(None);
     }
     let Some(link) = link_cleaner::links(&text).into_iter().next() else {

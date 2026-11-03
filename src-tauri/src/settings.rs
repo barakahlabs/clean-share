@@ -17,6 +17,9 @@ pub struct Settings {
     /// Fetch link previews (title, image, description) for bookmarks. Off by default: it's the
     /// only thing in the app that goes online.
     pub previews: bool,
+    /// Only fetch previews on unmetered connections (Wi-Fi). On mobile data or a hotspot they
+    /// wait, queued, until the app is next open on Wi-Fi.
+    pub previews_wifi_only: bool,
 }
 
 pub struct SettingsState {
@@ -67,7 +70,8 @@ pub fn settings_get(state: State<'_, SettingsState>) -> Settings {
     state.get()
 }
 
-/// Saves the settings. Switching previews on queues every bookmark that never had one.
+/// Saves the settings. Switching previews on queues every bookmark that never had one;
+/// lifting Wi-Fi only lets waiting previews go ahead.
 #[tauri::command]
 pub async fn settings_set(
     state: State<'_, SettingsState>,
@@ -75,12 +79,14 @@ pub async fn settings_set(
     previews: State<'_, Previews>,
     settings: Settings,
 ) -> CommandResult<Settings> {
-    let turned_on = settings.previews && !state.get().previews;
+    let old = state.get();
+    let turned_on = settings.previews && !old.previews;
+    let unrestricted = old.previews_wifi_only && !settings.previews_wifi_only;
     state.set(settings).map_err(CommandError)?;
-    if turned_on {
-        if let Some(store) = library.store.lock().await.as_mut() {
-            store.queue_missing_previews().await?;
-        }
+    if turned_on && let Some(store) = library.store.lock().await.as_mut() {
+        store.queue_missing_previews().await?;
+    }
+    if turned_on || unrestricted {
         previews.wake();
     }
     Ok(state.get())
