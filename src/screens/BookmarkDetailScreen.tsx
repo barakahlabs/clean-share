@@ -11,6 +11,7 @@ import {
 import { getSettings } from "../settings";
 import { Thumbnail } from "../components/Thumbnail";
 import { EmbedPlayer } from "../components/EmbedPlayer";
+import { ClampedText } from "../components/ClampedText";
 import { playerFor } from "../embeds";
 import { shareText } from "../shareTarget";
 import { ConfirmSheet } from "../components/ConfirmSheet";
@@ -18,6 +19,9 @@ import { formatDate, hostOf, titleFromLink } from "../format";
 import { SaveBookmarkSheet } from "./SaveBookmarkSheet";
 import "./Screen.css";
 import "./BookmarkDetailScreen.css";
+
+/** Lines of a description shown before "Show more". */
+const DESCRIPTION_LINES = 5;
 
 type Props = {
   id: string;
@@ -100,12 +104,15 @@ export function BookmarkDetailScreen({ id, onBack, onDeleted }: Props) {
               <Thumbnail src={thumbnailUrl(bookmark)} className="detail-image" />
             )}
             <h1 className="detail-title">{bookmark.title ?? titleFromLink(bookmark.url)}</h1>
-            {bookmark.description && <p className="detail-description">{bookmark.description}</p>}
+            {bookmark.description && (
+              <ClampedText text={bookmark.description} lines={DESCRIPTION_LINES} className="detail-description" />
+            )}
             <p className="detail-url">{bookmark.url}</p>
             <p className="detail-meta">
               {[
                 bookmark.siteName ?? hostOf(bookmark.url),
-                bookmark.author,
+                // "Vimeo · Vimeo" when the site posted it itself.
+                bookmark.author !== (bookmark.siteName ?? hostOf(bookmark.url)) && bookmark.author,
                 bookmark.published && `Published ${formatPublished(bookmark.published)}`,
                 `Saved ${formatDate(bookmark.createdAt)}`,
               ]
