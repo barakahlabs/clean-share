@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { thumbnailUrl, type Bookmark } from "../bookmarks";
+import { siteIconUrl, thumbnailUrl, type Bookmark } from "../bookmarks";
 import { hostOf, titleFromLink } from "../format";
 import "./BookmarkCard.css";
 
@@ -9,14 +9,18 @@ type Props = { bookmark: Bookmark; onOpen: () => void };
 const MAX_TAGS = 2;
 
 /**
- * One bookmark in the grid: its picture (or a tile with the site's initial when there's none,
- * e.g. previews off or a site that gives none), title, site and tags.
+ * One bookmark in the grid: its picture, title, site and tags. Without a picture, a tile in the
+ * site's colour shows the site's icon (saved with the preview), or else the site's initial (e.g.
+ * previews off, or a site without either).
  */
 export function BookmarkCard({ bookmark, onOpen }: Props) {
   const site = bookmark.siteName ?? hostOf(bookmark.url);
   const src = thumbnailUrl(bookmark);
+  const icon = src ? null : siteIconUrl(bookmark);
   const [loaded, setLoaded] = useState(false);
+  const [iconLoaded, setIconLoaded] = useState(false);
   useEffect(() => setLoaded(false), [src]);
+  useEffect(() => setIconLoaded(false), [icon]);
   const extraTags = bookmark.tags.length - MAX_TAGS;
 
   return (
@@ -24,7 +28,16 @@ export function BookmarkCard({ bookmark, onOpen }: Props) {
       <span className="bookmark-cover" style={{ "--tile-hue": hueOf(hostOf(bookmark.url)) } as React.CSSProperties}>
         {/* The tile stays behind the picture, so a missing or broken picture still looks right. */}
         <span className="bookmark-tile" aria-hidden="true">
-          {initialOf(site)}
+          {icon && (
+            <img
+              src={icon}
+              alt=""
+              loading="lazy"
+              className={iconLoaded ? "bookmark-icon loaded" : "bookmark-icon"}
+              onLoad={() => setIconLoaded(true)}
+            />
+          )}
+          {!iconLoaded && initialOf(site)}
         </span>
         {src && (
           <img
