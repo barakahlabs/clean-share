@@ -18,12 +18,15 @@ use serde::{Deserialize, Serialize};
 
 pub use types::{Domain, ParamPattern, PathPrefix, ProviderId};
 
-/// Bump when the format changes in a way older apps can't read.
+/// Bump when the format changes in a way older apps can't read or would get wrong if they
+/// ignored the new part. Fields that are safe to ignore (an older app just removes a little less)
+/// keep the version: every type here accepts unknown fields, so older apps load newer bundles.
+/// The TOML files are still strict: [`load_dir`] reports unknown keys as errors (typos).
 pub const SCHEMA_VERSION: u32 = 1;
 
 /// `rules/manifest.toml`
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
 pub struct Manifest {
   /// Format version. Must equal the version this app understands.
   pub schema: u32,
@@ -33,7 +36,7 @@ pub struct Manifest {
 
 /// `rules/global.toml`: parameters removed on every site.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
 pub struct Global {
   #[serde(default)]
   pub remove: Vec<ParamRule>,
@@ -45,7 +48,7 @@ pub struct Global {
 
 /// `rules/providers/<id>.toml`: rules for one service.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
 pub struct Provider {
   /// Must match the file name: `id = "x"` lives in `x.toml`.
   pub id: ProviderId,
@@ -74,7 +77,7 @@ pub struct Provider {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
 pub struct ParamRule {
   pub param: ParamPattern,
   /// Why this is tracking, in plain words. Shown in docs and can be shown in the app.
@@ -83,7 +86,7 @@ pub struct ParamRule {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
 pub struct TestCase {
   /// A link as shared by the app.
   #[serde(rename = "in")]
@@ -95,7 +98,6 @@ pub struct TestCase {
 
 /// All rules combined: the embedded defaults and the hosted `rules.json` bundle.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct RuleSet {
   pub schema: u32,
   pub revision: String,
@@ -218,6 +220,23 @@ pub fn validate(rules: &RuleSet) -> Result<(), Vec<String>> {
   if errors.is_empty() { Ok(()) } else { Err(errors) }
 }
 
+/// Reads a rules bundle (the hosted `rules.json`, or the one embedded at build time) and validates
+/// it. Unknown fields are ignored: they come from newer rules that this app doesn't know yet.
+pub fn parse_bundle(json: &[u8]) -> Result<RuleSet, Vec<String>> {
+  let rules: RuleSet = serde_json::from_slice(json).map_err(|e| vec![format!("rules.json: {e}")])?;
+  validate(&rules)?;
+  Ok(rules)
+}
+
+/// True if revision `a` is newer than `b`. Revisions are dates with a counter (`2026-10-31.2`),
+/// compared number by number, so `…31.10` is newer than `…31.2`.
+pub fn is_newer(a: &str, b: &str) -> bool {
+  fn parts(revision: &str) -> Vec<u64> {
+    revision.split(|c: char| !c.is_ascii_digit()).filter(|p| !p.is_empty()).map(|p| p.parse().unwrap_or(0)).collect()
+  }
+  parts(a) > parts(b)
+}
+
 fn read_toml<T: serde::de::DeserializeOwned>(path: &Path, errors: &mut Vec<String>) -> Option<T> {
   let text = match fs::read_to_string(path) {
     Ok(text) => text,
@@ -226,11 +245,76 @@ fn read_toml<T: serde::de::DeserializeOwned>(path: &Path, errors: &mut Vec<Strin
       return None;
     }
   };
-  match toml::from_str(&text) {
-    Ok(value) => Some(value),
+  let deserializer = match toml::Deserializer::parse(&text) {
+    Ok(d) => d,
+    Err(e) => {
+      errors.push(format!("{}: {e}", path.display()));
+      return None;
+    }
+  };
+  // The types accept unknown keys (for bundles from newer rules); in a rules file they're typos.
+  let mut unknown = Vec::new();
+  let value = serde_ignored::deserialize(deserializer, |key| unknown.push(key.to_string()));
+  for key in &unknown {
+    errors.push(format!("{}: unknown key `{key}`", path.display()));
+  }
+  match value {
+    Ok(value) if unknown.is_empty() => Some(value),
+    Ok(_) => None,
     Err(e) => {
       errors.push(format!("{}: {e}", path.display()));
       None
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn revisions_compare_number_by_number() {
+    assert!(is_newer("2026-10-31.10", "2026-10-31.2"));
+    assert!(is_newer("2026-11-01.1", "2026-10-31.9"));
+    assert!(is_newer("2026-10-31.2", "2026-10-31"));
+    assert!(!is_newer("2026-10-31.2", "2026-10-31.2"));
+    assert!(!is_newer("2026-10-30.5", "2026-10-31.1"));
+  }
+
+  fn rules_dir() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../rules")
+  }
+
+  #[test]
+  fn a_bundle_with_fields_from_newer_rules_still_loads() {
+    let rules = load_dir(&rules_dir()).unwrap();
+    let mut json: serde_json::Value = serde_json::to_value(&rules).unwrap();
+    json["future_option"] = serde_json::json!(true);
+    json["providers"][0]["unwrap"] = serde_json::json!(["q"]);
+    let parsed = parse_bundle(serde_json::to_string(&json).unwrap().as_bytes()).unwrap();
+    assert_eq!(parsed.revision, rules.revision);
+    assert_eq!(parsed.providers.len(), rules.providers.len());
+  }
+
+  #[test]
+  fn a_bundle_with_another_schema_version_is_refused() {
+    let mut rules = load_dir(&rules_dir()).unwrap();
+    rules.schema = SCHEMA_VERSION + 1;
+    let errors = parse_bundle(serde_json::to_string(&rules).unwrap().as_bytes()).unwrap_err();
+    assert!(errors[0].contains("schema version"), "{errors:?}");
+  }
+
+  #[test]
+  fn unknown_keys_in_a_rules_file_are_errors() {
+    let dir = std::env::temp_dir().join(format!("link-rules-test-{}", std::process::id()));
+    fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("manifest.toml");
+    fs::write(&path, "schema = 1\nrevision = \"2026-01-01.1\"\nrevison_note = \"typo\"\n").unwrap();
+    let mut errors = Vec::new();
+    let manifest: Option<Manifest> = read_toml(&path, &mut errors);
+    fs::remove_dir_all(&dir).ok();
+    assert!(manifest.is_none());
+    assert_eq!(errors.len(), 1);
+    assert!(errors[0].contains("unknown key `revison_note`"), "{errors:?}");
   }
 }
