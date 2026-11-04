@@ -110,13 +110,16 @@
     {
       "description": "NDK_HOME in mise.toml has the android-sdk version in its path, so update it by hand",
       "matchManagers": ["mise"],
-      "matchPackageNames": ["android-sdk"],
+      "matchDepNames": ["android-sdk"],
       "enabled": false
     },
     {
-      "description": "Renovate writes Corretto versions as 25.0.5+8.0.LTS, which mise can't install (it names them corretto-25.0.5.0.10), so update java by hand",
+      "description": [
+        "Renovate writes Corretto versions as 25.0.5+8.0.LTS, which mise can't install (it names them corretto-25.0.5.0.10), so update java by hand",
+        "matchDepNames, not matchPackageNames: Renovate looks java up as the package java-jdk, and matchPackageNames compares that"
+      ],
       "matchManagers": ["mise"],
-      "matchPackageNames": ["java"],
+      "matchDepNames": ["java"],
       "enabled": false
     },
     {
