@@ -32,6 +32,7 @@ pub fn run() {
             app.manage(settings::SettingsState::load(app.handle()));
             app.manage(previews::Previews::new(app.handle()));
             previews::start(app.handle().clone());
+            bookmarks::reclean_outdated(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -47,6 +48,7 @@ pub fn run() {
             bookmarks::tag_suggest,
             bookmarks::tag_rename,
             bookmarks::tag_delete,
+            bookmarks::bookmarks_reclean,
             previews::preview_fetch,
             previews::bookmark_preview_retry,
             transfer::bookmarks_export,

@@ -37,5 +37,5 @@ pub use clock::{Clock, SystemClock};
 pub use error::{Error, Result};
 pub use migrate::SCHEMA_VERSION;
 pub use model::*;
-pub use store::{ImportError, ImportReport, Store};
+pub use store::{ImportError, ImportReport, RecleanReport, Store};
 pub use tag_suggest::{Reason, Suggestion};

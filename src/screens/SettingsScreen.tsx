@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listTags } from "../bookmarks";
+import { listTags, recleanBookmarks, type RecleanReport } from "../bookmarks";
 import { getSettings, setSettings, type Settings } from "../settings";
 import { TagsScreen } from "./TagsScreen";
 import { TransferScreen } from "./TransferScreen";
@@ -16,6 +16,18 @@ export function SettingsScreen() {
   const [tagCount, setTagCount] = useState<number | null>(null);
   const [settings, setLocalSettings] = useState<Settings | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recleaning, setRecleaning] = useState(false);
+  const [reclean, setReclean] = useState<RecleanReport | null>(null);
+  const [recleanError, setRecleanError] = useState<string | null>(null);
+
+  const cleanAgain = () => {
+    setRecleaning(true);
+    setRecleanError(null);
+    recleanBookmarks()
+      .then(setReclean)
+      .catch((e) => setRecleanError(String(e)))
+      .finally(() => setRecleaning(false));
+  };
 
   useEffect(() => {
     getSettings()
@@ -94,7 +106,7 @@ export function SettingsScreen() {
         <p className="settings-note">
           Shows a picture, description and site for each bookmark. To get them, this phone opens the
           saved link once, like a browser would (without your cookies), and keeps a small picture.
-          It's the only thing in Clean Share that goes online.
+          It's the only thing in Clean Share that goes online on its own.
           {settings?.previews && settings.previewsWifiOnly && (
             <> On mobile data, previews wait until the app is next open on Wi-Fi.</>
           )}
@@ -120,6 +132,28 @@ export function SettingsScreen() {
           </button>
         </li>
       </ul>
+
+      <section className="settings-section">
+        <ul className="settings-list">
+          <li>
+            <button type="button" className="settings-row" disabled={recleaning} onClick={cleanAgain}>
+              <span>{recleaning ? "Cleaning…" : "Clean saved links again"}</span>
+            </button>
+          </li>
+        </ul>
+        <p className="settings-note">
+          {reclean
+            ? recleanSummary(reclean)
+            : "Runs every saved link through the current tracking rules. Happens by itself after an update that changes the rules; links that turn out to be the same are merged."}
+        </p>
+        {recleanError && <p className="settings-note settings-error">{recleanError}</p>}
+      </section>
     </main>
   );
+}
+
+function recleanSummary(r: RecleanReport) {
+  if (r.changed === 0) return `Checked ${r.checked} saved ${r.checked === 1 ? "link" : "links"}: all already clean.`;
+  const merged = r.merged > 0 ? `, ${r.merged} merged into ${r.merged === 1 ? "a bookmark" : "bookmarks"} you already had` : "";
+  return `Checked ${r.checked}: ${r.changed} cleaned again${merged}.`;
 }

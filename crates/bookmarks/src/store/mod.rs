@@ -2,11 +2,13 @@
 
 mod list;
 mod preview;
+mod reclean;
 mod row;
 mod suggest;
 mod tags;
 mod transfer;
 
+pub use reclean::RecleanReport;
 pub use transfer::{ImportError, ImportReport};
 
 use std::sync::Arc;
