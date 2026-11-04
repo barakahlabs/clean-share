@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use ::bookmarks::{
     Bookmark, BookmarkPatch, BookmarkTag, ListQuery, NewBookmark, Page, Prepared, PreviewStatus,
-    Saved, Store, Suggestion, TagCount, TagDraft, TagInput, db::Location,
+    RecleanReport, Saved, Store, Suggestion, TagCount, TagDraft, TagInput, db::Location,
 };
 use serde::{Serialize, Serializer};
 use tauri::{AppHandle, Manager, State, async_runtime::Mutex};
@@ -199,4 +199,45 @@ pub async fn tag_rename(
 #[tauri::command]
 pub async fn tag_delete(library: State<'_, Library>, name: String) -> CommandResult<()> {
     with_store!(library, |store| store.delete_tag(&name))
+}
+
+/// Cleans every saved link again with the current rules (Settings). Links that turn out to be
+/// the same are merged; the merged-away bookmarks' thumbnails are deleted.
+#[tauri::command]
+pub async fn bookmarks_reclean(
+    library: State<'_, Library>,
+    previews: State<'_, Previews>,
+) -> CommandResult<RecleanReport> {
+    let report: RecleanReport = with_store!(library, |store| store.reclean(true))?;
+    for id in &report.removed {
+        previews.remove_thumbnail(id);
+    }
+    Ok(report)
+}
+
+/// On launch: re-cleans the bookmarks saved with older rules (the app's rules changed with an
+/// update). Quiet; nothing to do when the rules are the same.
+pub fn reclean_outdated(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let library = app.state::<Library>();
+        let report = match library.store.lock().await.as_mut() {
+            Some(store) => store.reclean(false).await,
+            None => return,
+        };
+        match report {
+            Ok(report) => {
+                for id in &report.removed {
+                    app.state::<Previews>().remove_thumbnail(id);
+                }
+                if report.changed > 0 {
+                    eprintln!(
+                        "re-cleaned {} saved links with the new rules ({} merged)",
+                        report.changed, report.merged
+                    );
+                }
+            }
+            Err(e) => eprintln!("re-cleaning saved links failed: {e}"),
+        }
+    });
 }
