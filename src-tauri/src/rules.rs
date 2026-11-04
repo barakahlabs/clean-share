@@ -66,6 +66,18 @@ pub struct RulesStatus {
     pub checked_at: Option<i64>,
 }
 
+/// What's in the rules cache.
+enum Cached {
+    /// Nothing saved.
+    None,
+    /// Saved, verified and newer than the built-in rules.
+    Use(RuleSet),
+    /// Saved and fine, but the built-in rules are as new (the app was updated since).
+    NotNewer,
+    /// Saved but doesn't verify (damaged or partly written).
+    Broken,
+}
+
 pub struct RulesState {
     dir: Option<PathBuf>,
     fetcher: Option<Fetcher>,
@@ -90,20 +102,36 @@ impl RulesState {
             state: Mutex::new(state),
             wake: Notify::new(),
         };
-        if let Some(rules) = this.cached() {
-            set_current(rules);
+        match this.cached() {
+            Cached::Use(rules) => set_current(rules),
+            // A saved file that no longer verifies: forget its fingerprint, so the next check
+            // downloads a good copy.
+            Cached::Broken => {
+                this.state.lock().unwrap().etag = None;
+                this.save_state();
+            }
+            Cached::None | Cached::NotNewer => {}
         }
         this
     }
 
-    fn cached(&self) -> Option<RuleSet> {
-        let dir = self.dir.as_ref()?;
-        let bundle = std::fs::read(dir.join("rules.json")).ok()?;
-        let signature = std::fs::read(dir.join("rules.json.sig")).ok()?;
-        let rules = rules_update::verify(&bundle, &signature, &rules_update::PUBLIC_KEY)
-            .inspect_err(|e| eprintln!("cached rules ignored: {e}"))
-            .ok()?;
-        rules_update::is_newer(&rules, &link_cleaner::bundled_rules().revision).then_some(rules)
+    fn cached(&self) -> Cached {
+        let Some(dir) = self.dir.as_ref() else { return Cached::None };
+        let (Ok(bundle), Ok(signature)) =
+            (std::fs::read(dir.join("rules.json")), std::fs::read(dir.join("rules.json.sig")))
+        else {
+            return Cached::None;
+        };
+        match rules_update::verify(&bundle, &signature, &rules_update::PUBLIC_KEY) {
+            Ok(rules) if rules_update::is_newer(&rules, &link_cleaner::bundled_rules().revision) => {
+                Cached::Use(rules)
+            }
+            Ok(_) => Cached::NotNewer,
+            Err(e) => {
+                eprintln!("cached rules ignored: {e}");
+                Cached::Broken
+            }
+        }
     }
 
     /// Checks again now (or right after a check that's running).
@@ -161,20 +189,25 @@ impl RulesState {
         };
         let rules = rules_update::verify(&bundle, &signature, &rules_update::PUBLIC_KEY)
             .map_err(|e| e.to_string())?;
-        // Remember the fingerprint even when it's not newer, so it isn't downloaded again.
-        self.state.lock().unwrap().etag = etag;
-        self.save_state();
         if !rules_update::is_newer(&rules, &current().revision) {
+            // Nothing to keep; remember the fingerprint so it isn't downloaded again.
+            self.state.lock().unwrap().etag = etag;
+            self.save_state();
             return Ok(None);
         }
-        if let Some(dir) = &self.dir {
-            let written = std::fs::create_dir_all(dir)
+        // Remember the fingerprint only once the file is saved: if saving fails, the next check
+        // downloads it again instead of hearing "not modified" for a file the app doesn't have.
+        let written = self.dir.as_ref().map(|dir| {
+            std::fs::create_dir_all(dir)
                 .and_then(|()| std::fs::write(dir.join("rules.json"), &bundle))
-                .and_then(|()| std::fs::write(dir.join("rules.json.sig"), &signature));
-            if let Err(e) = written {
-                eprintln!("can't cache the new rules: {e}");
-            }
+                .and_then(|()| std::fs::write(dir.join("rules.json.sig"), &signature))
+        });
+        match written {
+            Some(Ok(())) => self.state.lock().unwrap().etag = etag,
+            Some(Err(e)) => eprintln!("can't cache the new rules: {e}"),
+            None => {}
         }
+        self.save_state();
         Ok(Some(rules))
     }
 }
