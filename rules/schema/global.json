@@ -58,6 +58,13 @@
           "description": "A link as shared by the app.",
           "type": "string"
         },
+        "needs": {
+          "description": "Rule features this test relies on (see [`FEATURES`]), e.g. `[\"redirect\"]`.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "out": {
           "description": "The same link after cleaning.",
           "type": "string"

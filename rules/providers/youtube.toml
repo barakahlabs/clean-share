@@ -20,6 +20,12 @@ reason = "Where in YouTube the link was shared from"
 param = "pp"
 reason = "Search and recommendation tracking"
 
+# Links in video descriptions.
+[[redirect]]
+path = "/redirect"
+params = ["q"]
+reason = "YouTube's link redirect (from video descriptions and comments): records the click"
+
 [[test]]
 in = "https://youtu.be/dQw4w9WgXcQ?si=AbCdEf123&t=42"
 out = "https://youtu.be/dQw4w9WgXcQ?t=42"
@@ -35,3 +41,8 @@ out = "https://youtu.be/dQw4w9WgXcQ?t=15"
 [[test]]
 in = "https://music.youtube.com/watch?v=abc&list=PL123&si=q"
 out = "https://music.youtube.com/watch?v=abc&list=PL123"
+
+[[test]]
+in = "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbX&q=https%3A%2F%2Fexample.com%2Fgear&v=dQw4w9WgXcQ"
+out = "https://example.com/gear"
+needs = ["redirect"]

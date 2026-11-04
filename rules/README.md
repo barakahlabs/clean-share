@@ -1,8 +1,8 @@
 # Tracking rules
 
 These files decide which link parameters Clean Share treats as tracking. They are embedded in
-the app at build time and will also be published as a hosted `rules.json`, so rules can be
-updated without an app release.
+the app at build time and also published as a hosted `rules.json`, so rules can be updated
+without an app release.
 
 | File | What it holds | Schema |
 |---|---|---|
@@ -23,11 +23,18 @@ the `#:schema` line at the top of each file.
   share token on X but the start time on YouTube.
 - `keep` always wins, even over every-site rules. `except` paths skip the provider's own rules.
 - If nothing is left after `?`, the `?` is removed too.
+- A `[[redirect]]` is a click-tracking page that forwards to another link it carries in a
+  parameter (`google.com/url?q=<link>`). A link to that exact `path` is replaced by the link
+  in the first listed parameter that holds an `http(s)` link, which is then cleaned too
+  (redirects inside redirects are followed up to 3 deep). Otherwise it's cleaned as usual.
 
 ## Changing rules
 
 1. Edit or add a file. A new service gets `providers/<id>.toml` with `id = "<id>"`.
 2. Add a `[[test]]` with a real shared link and the expected cleaned link.
+   A test that uses a newer rule feature says so: `needs = ["redirect"]` for a redirect link.
+   Apps that don't have the feature skip that test instead of refusing all the rules;
+   `check` tells you if one is missing.
 3. Bump `revision` in `manifest.toml`.
 4. From `crates/rules-tool`: `cargo run -- generate` (updates the schemas and the tables below),
    then `cargo run -- check`.
@@ -65,21 +72,22 @@ that reads them (`crates/`) is MIT licensed, see the [root LICENSE](../LICENSE).
 
 <!-- BEGIN GENERATED: edit the TOML files, then run `cargo run -- generate` in crates/rules-tool -->
 
-Rules revision `2026-10-31.2`.
+Rules revision `2026-11-04.1`.
 
 ### Overview
 
-| Platform | Domains | Removed | Always kept | Not applied on |
-|---|---|---|---|---|
-| [Facebook](providers/facebook.toml) | `facebook.com`, `fb.watch` | `mibextid`, `rdid`, `share_url`, `sfnsn`, `__cft__*`, `__tn__` | `story_fbid`, `id`, `v` | – |
-| [Instagram](providers/instagram.toml) | `instagram.com` | everything not kept, incl. `srtk`, `psln`, `obrf` | `img_index` | – |
-| [LinkedIn](providers/linkedin.toml) | `linkedin.com` | `trk`, `trackingId`, `lipi`, `midToken`, `midSig`, `trkEmail`, `eid`, `rcm` | – | – |
-| [Reddit](providers/reddit.toml) | `reddit.com` | `share_id`, `rdt`, `ref`, `ref_source`, `ref_campaign` | `context` | – |
-| [Spotify](providers/spotify.toml) | `open.spotify.com` | `si`, `nd`, `dlsi` | – | – |
-| [Threads](providers/threads.toml) | `threads.net`, `threads.com` | `xmt`, `slof` | – | – |
-| [TikTok](providers/tiktok.toml) | `tiktok.com` | `_r`, `_t`, `is_from_webapp`, `is_copy_url`, `sender_device`, `sender_web_id`, `share_app_id`, `share_item_id`, `share_link_id`, `social_share_type`, `social_sharing`, `tt_from`, `u_code`, `user_id`, `sec_user_id`, `checksum`, `timestamp`, `enter_from`, `source`, `web_id`, `preview_pb` | – | – |
-| [X / Twitter](providers/x.toml) | `x.com`, `twitter.com` | `a`, `t`, `s`, `ref_src`, `ref_url` | – | `/i/redirect` |
-| [YouTube](providers/youtube.toml) | `youtube.com`, `youtu.be` | `si`, `is`, `feature`, `pp` | `v`, `t`, `list`, `index` | – |
+| Platform | Domains | Removed | Always kept | Not applied on | Redirects |
+|---|---|---|---|---|---|
+| [Facebook](providers/facebook.toml) | `facebook.com`, `fb.watch` | `mibextid`, `rdid`, `share_url`, `sfnsn`, `__cft__*`, `__tn__` | `story_fbid`, `id`, `v` | – | `/l.php` |
+| [Google](providers/google.toml) | `google.com` | – | – | – | `/url` |
+| [Instagram](providers/instagram.toml) | `instagram.com` | everything not kept, incl. `srtk`, `psln`, `obrf` | `img_index` | – | `/` |
+| [LinkedIn](providers/linkedin.toml) | `linkedin.com` | `trk`, `trackingId`, `lipi`, `midToken`, `midSig`, `trkEmail`, `eid`, `rcm` | – | – | `/redir/redirect` |
+| [Reddit](providers/reddit.toml) | `reddit.com` | `share_id`, `rdt`, `ref`, `ref_source`, `ref_campaign` | `context` | – | – |
+| [Spotify](providers/spotify.toml) | `open.spotify.com` | `si`, `nd`, `dlsi` | – | – | – |
+| [Threads](providers/threads.toml) | `threads.net`, `threads.com` | `xmt`, `slof` | – | – | – |
+| [TikTok](providers/tiktok.toml) | `tiktok.com` | `_r`, `_t`, `is_from_webapp`, `is_copy_url`, `sender_device`, `sender_web_id`, `share_app_id`, `share_item_id`, `share_link_id`, `social_share_type`, `social_sharing`, `tt_from`, `u_code`, `user_id`, `sec_user_id`, `checksum`, `timestamp`, `enter_from`, `source`, `web_id`, `preview_pb` | – | – | – |
+| [X / Twitter](providers/x.toml) | `x.com`, `twitter.com` | `a`, `t`, `s`, `ref_src`, `ref_url` | – | `/i/redirect` | – |
+| [YouTube](providers/youtube.toml) | `youtube.com`, `youtu.be` | `si`, `is`, `feature`, `pp` | `v`, `t`, `list`, `index` | – | `/redirect` |
 
 ### Removed on every site ([global.toml](global.toml))
 
@@ -123,6 +131,22 @@ Rules revision `2026-10-31.2`.
 | `__cft__*` | Click tracking token |
 | `__tn__` | Click tracking flag |
 
+Redirect links, replaced by the link they lead to:
+
+| Path | Link in | What it is |
+|---|---|---|
+| `/l.php` | `u` | Facebook's link shim (l.facebook.com): records the click before sending you on |
+
+### Google ([providers/google.toml](providers/google.toml))
+
+No site-specific parameters; the every-site rules apply.
+
+Redirect links, replaced by the link they lead to:
+
+| Path | Link in | What it is |
+|---|---|---|
+| `/url` | `q`, `url` | Google's click-tracking page: links from search results, Gmail and Docs pass through it |
+
 ### Instagram ([providers/instagram.toml](providers/instagram.toml))
 
 Removes **every** parameter except `img_index` (`strip_unknown = true`), so new tracking names are covered automatically. Known ones:
@@ -132,6 +156,12 @@ Removes **every** parameter except `img_index` (`strip_unknown = true`), so new 
 | `srtk` | Share tracking token |
 | `psln` | Share tracking token |
 | `obrf` | Share tracking token |
+
+Redirect links, replaced by the link they lead to:
+
+| Path | Link in | What it is |
+|---|---|---|
+| `/` | `u` | Instagram's link shim (l.instagram.com): records the click before sending you on |
 
 ### LinkedIn ([providers/linkedin.toml](providers/linkedin.toml))
 
@@ -145,6 +175,12 @@ Removes **every** parameter except `img_index` (`strip_unknown = true`), so new 
 | `trkEmail` | Email tracking |
 | `eid` | Email tracking ID |
 | `rcm` | Recommendation tracking |
+
+Redirect links, replaced by the link they lead to:
+
+| Path | Link in | What it is |
+|---|---|---|
+| `/redir/redirect` | `url` | LinkedIn's link redirect (from posts and messages): records the click |
 
 ### Reddit ([providers/reddit.toml](providers/reddit.toml))
 
@@ -216,18 +252,30 @@ Removes **every** parameter except `img_index` (`strip_unknown = true`), so new 
 | `feature` | Where in YouTube the link was shared from |
 | `pp` | Search and recommendation tracking |
 
+Redirect links, replaced by the link they lead to:
+
+| Path | Link in | What it is |
+|---|---|---|
+| `/redirect` | `q` | YouTube's link redirect (from video descriptions and comments): records the click |
+
 ### Examples (from the rule tests)
 
 | Platform | Shared link | Cleaned link |
 |---|---|---|
 | Facebook | `https://www.facebook.com/share/p/abc123/?mibextid=WC7FNe` | `https://www.facebook.com/share/p/abc123/` |
 | Facebook | `https://www.facebook.com/permalink.php?story_fbid=1&id=2&__cft__[0]=AZX&__tn__=%2CO` | `https://www.facebook.com/permalink.php?story_fbid=1&id=2` |
+| Facebook | `https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.com%2Fstory%3Ffbclid%3DIwAR0x&h=AT0aBcD&__tn__=H-R` | `https://example.com/story` |
+| Google | `https://www.google.com/url?sa=t&source=web&rct=j&url=https%3A%2F%2Fexample.com%2Fguide%3Fpage%3D2%26utm_source%3Dgoogle&ved=2ahUKEwiX&usg=AOvVaw1` | `https://example.com/guide?page=2` |
+| Google | `https://www.google.com/url?q=https://example.org/a&sa=D&source=docs&ust=1730000000&usg=AOvVaw2` | `https://example.org/a` |
+| Google | `https://www.google.com/search?q=https%3A%2F%2Fexample.com` | `https://www.google.com/search?q=https%3A%2F%2Fexample.com` |
 | Instagram | `https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MWQ1ZGUxMzBkMA==` | `https://www.instagram.com/reel/C1a2B3c4D5e/` |
 | Instagram | `https://www.instagram.com/p/abc/?utm_source=ig_web_copy_link&igshid=xyz` | `https://www.instagram.com/p/abc/` |
 | Instagram | `https://www.instagram.com/reel/C1a2B3c4D5e/?srtk=aB3dEf9GhIj` | `https://www.instagram.com/reel/C1a2B3c4D5e/` |
 | Instagram | `https://www.instagram.com/reel/C1a2B3c4D5e/?psln=Q2xvdWQ&obrf=7Hk2` | `https://www.instagram.com/reel/C1a2B3c4D5e/` |
 | Instagram | `https://www.instagram.com/p/abc/?img_index=2&igsh=xyz` | `https://www.instagram.com/p/abc/?img_index=2` |
+| Instagram | `https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2Fshop%3Futm_source%3Dig&e=AT1xYz` | `https://example.com/shop` |
 | LinkedIn | `https://www.linkedin.com/posts/someone_activity-123?utm_source=share&rcm=ACoAA&trk=public_post` | `https://www.linkedin.com/posts/someone_activity-123` |
+| LinkedIn | `https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fexample.com%2Fjobs&urlhash=a1B2&trk=public_post-text` | `https://example.com/jobs` |
 | Reddit | `https://www.reddit.com/r/rust/comments/abc/title/?share_id=Xyz&utm_medium=android_app&utm_source=share` | `https://www.reddit.com/r/rust/comments/abc/title/` |
 | Reddit | `https://www.reddit.com/r/rust/comments/abc/title/def/?context=3&ref=share` | `https://www.reddit.com/r/rust/comments/abc/title/def/?context=3` |
 | Spotify | `https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=a1b2c3d4` | `https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC` |
@@ -240,6 +288,7 @@ Removes **every** parameter except `img_index` (`strip_unknown = true`), so new 
 | YouTube | `https://www.youtube.com/watch?v=dQw4w9WgXcQ&si=xyz&feature=shared` | `https://www.youtube.com/watch?v=dQw4w9WgXcQ` |
 | YouTube | `https://youtu.be/dQw4w9WgXcQ?is=Xk3pQ9rT2mLw&t=15` | `https://youtu.be/dQw4w9WgXcQ?t=15` |
 | YouTube | `https://music.youtube.com/watch?v=abc&list=PL123&si=q` | `https://music.youtube.com/watch?v=abc&list=PL123` |
+| YouTube | `https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbX&q=https%3A%2F%2Fexample.com%2Fgear&v=dQw4w9WgXcQ` | `https://example.com/gear` |
 | Any site | `https://example.com/a?utm_source=x&id=7&utm_medium=y&page=2#top` | `https://example.com/a?id=7&page=2#top` |
 | Any site | `https://example.com/?fbclid=IwAR0abc&gclid=Cj0K` | `https://example.com/` |
 | Any site | `https://example.com/page?t=5` | `https://example.com/page?t=5` |
