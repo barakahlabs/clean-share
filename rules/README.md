@@ -32,8 +32,15 @@ the `#:schema` line at the top of each file.
 4. From `crates/rules-tool`: `cargo run -- generate` (updates the schemas and the tables below),
    then `cargo run -- check`.
 
-A rule file that doesn't match the schema, a domain claimed by two providers, a parameter in
-both `keep` and `remove`, or a failing test fails `check` and the app build.
+A rule file that doesn't match the schema (an unknown key included), a domain claimed by two
+providers, a parameter in both `keep` and `remove`, or a failing test fails `check` and the app
+build.
+
+Merged to `main`, the rules are published for apps to download
+(`.github/workflows/rules.yml`, `https://barakahlabs.github.io/clean-share/rules/v1/rules.json`,
+signed). Apps check on launch and every hour, and use them if the revision is newer, so a new rule
+reaches people without an app release. A new field older apps can ignore safely keeps
+`schema = 1`; one they'd get wrong by ignoring it needs a new schema version.
 
 ## License
 

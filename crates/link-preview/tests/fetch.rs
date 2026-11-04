@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use link_preview::{Config, Error, Fetcher};
+use link_preview::{Config, Download, Error, Fetcher};
 use tokio::{
   io::{AsyncReadExt, AsyncWriteExt},
   net::TcpListener,
@@ -22,10 +22,20 @@ async fn server() -> String {
         let n = socket.read(&mut buf).await.unwrap_or(0);
         let request = String::from_utf8_lossy(&buf[..n]);
         let path = request.split_whitespace().nth(1).unwrap_or("/").to_string();
-        let (status, content_type, body, delay) = route(&path, &origin);
+        let (status, content_type, body, delay) = if path == "/rules.json" {
+          // Answers 304 when asked with the current ETag, like GitHub Pages.
+          if request.to_ascii_lowercase().contains("if-none-match: \"v2\"") {
+            ("304 Not Modified", "application/json", Vec::new(), Duration::ZERO)
+          } else {
+            ("200 OK", "application/json", br#"{"rules":true}"#.to_vec(), Duration::ZERO)
+          }
+        } else {
+          route(&path, &origin)
+        };
+        let etag = if path == "/rules.json" { "etag: \"v2\"\r\n" } else { "" };
         tokio::time::sleep(delay).await;
         let head = format!(
-          "HTTP/1.1 {status}\r\ncontent-type: {content_type}\r\ncontent-length: {}\r\nconnection: close\r\n{}\r\n",
+          "HTTP/1.1 {status}\r\ncontent-type: {content_type}\r\ncontent-length: {}\r\nconnection: close\r\n{etag}{}\r\n",
           body.len(),
           if status.starts_with("302") { format!("location: {origin}/loop\r\n") } else { String::new() }
         );
@@ -144,4 +154,17 @@ async fn private_addresses_are_refused_by_default() {
   // A name that resolves to a local address is refused too.
   let by_name = base.replace("127.0.0.1", "localhost");
   assert!(matches!(fetcher.preview(&format!("{by_name}/page")).await, Err(Error::Blocked(_))));
+}
+
+#[tokio::test]
+async fn downloads_only_when_the_file_changed() {
+  let base = server().await;
+  let url = format!("{base}/rules.json");
+  let first = local().download(&url, None, 1024).await.unwrap();
+  assert_eq!(first, Download::Fetched { bytes: br#"{"rules":true}"#.to_vec(), etag: Some("\"v2\"".into()) });
+  // Same fingerprint: the server sends nothing.
+  assert_eq!(local().download(&url, Some("\"v2\""), 1024).await.unwrap(), Download::NotModified);
+  // An older fingerprint: the file comes again.
+  assert!(matches!(local().download(&url, Some("\"v1\""), 1024).await.unwrap(), Download::Fetched { .. }));
+  assert!(matches!(local().download(&url, None, 4).await, Err(Error::TooLarge(4))));
 }

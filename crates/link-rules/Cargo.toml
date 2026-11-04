@@ -7,5 +7,9 @@ license = "MIT"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
+# Unknown keys in the TOML files are errors (typos); the types themselves accept them, so a
+# downloaded bundle with fields from newer rules still loads in older apps.
+serde_ignored = "0.1"
+serde_json = "1"
 schemars = "1.2"
 toml = "1.1"

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listTags, recleanBookmarks, type RecleanReport } from "../bookmarks";
 import { getSettings, setSettings, type Settings } from "../settings";
+import { checkRules, onRulesStatus, rulesStatus, type RulesStatus } from "../rules";
 import { TagsScreen } from "./TagsScreen";
 import { TransferScreen } from "./TransferScreen";
 import "./Screen.css";
@@ -16,6 +17,24 @@ export function SettingsScreen() {
   const [tagCount, setTagCount] = useState<number | null>(null);
   const [settings, setLocalSettings] = useState<Settings | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rules, setRules] = useState<RulesStatus | null>(null);
+  const [checkingRules, setCheckingRules] = useState(false);
+  const [rulesError, setRulesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    rulesStatus().then(setRules).catch(() => {});
+    return onRulesStatus(setRules);
+  }, []);
+
+  const checkNow = () => {
+    setCheckingRules(true);
+    setRulesError(null);
+    checkRules()
+      .then(setRules)
+      .catch((e) => setRulesError(String(e)))
+      .finally(() => setCheckingRules(false));
+  };
+
   const [recleaning, setRecleaning] = useState(false);
   const [reclean, setReclean] = useState<RecleanReport | null>(null);
   const [recleanError, setRecleanError] = useState<string | null>(null);
@@ -136,6 +155,22 @@ export function SettingsScreen() {
       <section className="settings-section">
         <ul className="settings-list">
           <li>
+            <button type="button" className="settings-row" disabled={checkingRules} onClick={checkNow}>
+              <span>{checkingRules ? "Checking…" : "Tracking rules"}</span>
+              <span className="settings-value">{rules?.revision ?? ""}</span>
+            </button>
+          </li>
+        </ul>
+        <p className="settings-note">
+          {rules ? rulesSummary(rules) : ""} New rules arrive by themselves (checked when the app
+          opens and every hour); tap to check now.
+        </p>
+        {rulesError && <p className="settings-note settings-error">{rulesError}</p>}
+      </section>
+
+      <section className="settings-section">
+        <ul className="settings-list">
+          <li>
             <button type="button" className="settings-row" disabled={recleaning} onClick={cleanAgain}>
               <span>{recleaning ? "Cleaning…" : "Clean saved links again"}</span>
             </button>
@@ -156,4 +191,12 @@ function recleanSummary(r: RecleanReport) {
   if (r.changed === 0) return `Checked ${r.checked} saved ${r.checked === 1 ? "link" : "links"}: all already clean.`;
   const merged = r.merged > 0 ? `, ${r.merged} merged into ${r.merged === 1 ? "a bookmark" : "bookmarks"} you already had` : "";
   return `Checked ${r.checked}: ${r.changed} cleaned again${merged}.`;
+}
+
+function rulesSummary(r: RulesStatus) {
+  const source = r.downloaded ? "Updated since the app was installed." : "The ones built into the app.";
+  if (r.checkedAt === null) return source;
+  const minutes = Math.round((Date.now() - r.checkedAt) / 60000);
+  const when = minutes < 1 ? "just now" : minutes < 60 ? `${minutes} min ago` : `at ${new Date(r.checkedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  return `${source} Last checked ${when}.`;
 }

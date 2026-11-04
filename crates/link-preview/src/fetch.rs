@@ -13,6 +13,18 @@ pub struct Fetcher {
   config: Config,
 }
 
+/// A file from [`Fetcher::download`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Download {
+  /// The server says it hasn't changed since the `etag` we sent (HTTP 304, no body).
+  NotModified,
+  Fetched {
+    bytes: Vec<u8>,
+    /// The server's fingerprint of this version, to send next time.
+    etag: Option<String>,
+  },
+}
+
 /// A downloaded image, not yet resized.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Image {
@@ -97,6 +109,26 @@ impl Fetcher {
     }
     let bytes = read(response, self.config.max_image_bytes, false).await?;
     Ok(Image { bytes, content_type })
+  }
+
+  /// Downloads a file (e.g. the hosted rules) up to `limit` bytes. With the `etag` from last time,
+  /// the server answers [`Download::NotModified`] without a body if the file hasn't changed.
+  pub async fn download(&self, link: &str, etag: Option<&str>, limit: usize) -> Result<Download> {
+    let url = guard::check(link, self.config.allow_private)?;
+    let mut request = self.client.get(url).header(header::ACCEPT, "*/*");
+    if let Some(etag) = etag {
+      request = request.header(header::IF_NONE_MATCH, etag);
+    }
+    let response = request.send().await.map_err(network_error)?;
+    if response.status() == reqwest::StatusCode::NOT_MODIFIED {
+      return Ok(Download::NotModified);
+    }
+    if !response.status().is_success() {
+      return Err(Error::Status(response.status().as_u16()));
+    }
+    let etag = response.headers().get(header::ETAG).and_then(|v| v.to_str().ok()).map(str::to_string);
+    let bytes = read(response, limit, false).await?;
+    Ok(Download::Fetched { bytes, etag })
   }
 
   async fn page(&self, url: &Url) -> Result<(String, html::Page)> {

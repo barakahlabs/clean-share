@@ -64,14 +64,22 @@ in priority order within each section.
 
 ## 3. Hosted rules (update rules without an app release)
 
-- [ ] Publish `rules.json` (from `rules-tool bundle`) on a static host: GitHub Pages or a release
-      asset. No cookies, no analytics.
-- [ ] Sign the bundle (ed25519). Embed the public key in the app; reject unsigned or tampered files.
-- [ ] Fetch in Rust on launch at most once a day; cache on disk; use only if:
-      signature valid → `schema` supported → `link_rules::validate` passes →
-      `link_cleaner::check_rule_tests` passes → `revision` newer than the cached/bundled one.
-- [ ] Fall back to the bundled rules on any failure. Show the active rules revision in the app.
-- [ ] CI job that bundles, signs and publishes when `rules/` changes on `main`.
+- [x] CI publishes the rules on every change on `main` (`.github/workflows/rules.yml`): `rules-tool
+      check`, `bundle`, sign, verify with the app's own check, deploy to GitHub Pages:
+      `https://barakahlabs.github.io/clean-share/rules/v1/rules.json` and `rules.json.sig`. One
+      file per schema version, overwritten each time; a breaking format change would add `v2`.
+- [x] Signed with ed25519: private key in the GitHub secret `RULES_SIGNING_KEY` (local copy in
+      `.secrets/`, backup in Passwords); public key in `crates/rules-update`.
+- [x] The app checks on launch, every hour while open, and when it comes back after an hour; each
+      check is a conditional request (`If-None-Match`), so an unchanged file costs a 304 and no
+      body. Mobile data is fine (a few KB).
+- [x] A download is used only if the signature is valid, the schema is the app's, the rules
+      validate and pass their own tests, and the revision is newer; then it's cached, used
+      everywhere (clean screen, previews, bookmarks) and saved links are re-cleaned.
+- [x] Older apps read newer bundles: unknown fields are ignored (the TOML files stay strict:
+      `rules-tool check` reports unknown keys). Settings shows the rules revision, where it came
+      from and when it was last checked, with a "check now".
+- If a check fails (offline, Pages down, a bad file), the app keeps the rules it has.
 
 ## 4. More and better rules
 
@@ -138,7 +146,8 @@ Save shared links with tags, inside this app, local-only. Plan, data model and p
 - [x] Phase 4, first part: keyword suggestions from the page text, on every phone.
 - [ ] Phase 4: on-device AI tagging needs a newer phone (Apple Intelligence: iPhone 15 Pro+;
       Gemini Nano: recent Pixels/Samsungs).
-- [ ] Phase 6: re-clean saved links when the rules change, with a report.
+- [x] Phase 6: re-clean saved links when the rules change (on launch, or Settings → Clean saved
+      links again), merging links that become duplicates, with a report.
 - [ ] Phase 8: accounts and paid sync (one Turso database per user).
 - [ ] Faster big imports: one transaction instead of one save per bookmark.
 
