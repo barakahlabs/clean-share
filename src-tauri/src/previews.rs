@@ -316,7 +316,7 @@ fn preview_data(p: Preview) -> PreviewData {
 
 /// What a cached preview (fetched for the save sheet) says about the page, for tag suggestions.
 pub fn page_info(previews: &Previews, text: &str) -> Option<PageInfo> {
-    let url = link_cleaner::links(text).into_iter().next()?.cleaned;
+    let url = link_cleaner::links_with(&crate::rules::current(), text).into_iter().next()?.cleaned;
     let p = previews.peek(&url)?;
     Some(PageInfo {
         description: p.description,
@@ -328,7 +328,7 @@ pub fn page_info(previews: &Previews, text: &str) -> Option<PageInfo> {
 
 /// The first link in `link`, cleaned; the link itself if the rules find nothing.
 fn clean(link: &str) -> String {
-    link_cleaner::links(link)
+    link_cleaner::links_with(&crate::rules::current(), link)
         .into_iter()
         .next()
         .map_or_else(|| link.to_string(), |l| l.cleaned)
@@ -365,7 +365,7 @@ pub async fn preview_fetch(
     if !may_fetch(&app, &settings.get()) {
         return Ok(None);
     }
-    let Some(link) = link_cleaner::links(&text).into_iter().next() else {
+    let Some(link) = link_cleaner::links_with(&crate::rules::current(), &text).into_iter().next() else {
         return Ok(None);
     };
     if let Some(preview) = previews.peek(&link.cleaned) {

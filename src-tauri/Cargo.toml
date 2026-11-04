@@ -30,7 +30,9 @@ tauri-plugin-share-target = { path = "../plugins/share-target" }
 link-cleaner = { path = "../crates/link-cleaner" }
 bookmarks = { path = "../crates/bookmarks" }
 link-preview = { path = "../crates/link-preview" }
+link-rules = { path = "../crates/link-rules" }
+rules-update = { path = "../crates/rules-update" }
 sys-locale = "0.3"
-tokio = { version = "1", features = ["sync"] }
+tokio = { version = "1", features = ["sync", "time"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

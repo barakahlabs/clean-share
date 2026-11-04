@@ -27,6 +27,8 @@ dist-ssr
 docs/screenshots/
 
 # Signing keys and secrets: never commit (keep them in a password manager / CI secrets)
+# Local copies live in .secrets/ (e.g. rules-signing-key.pem, the rules signing key).
+.secrets/
 *.jks
 *.keystore
 keystore.properties

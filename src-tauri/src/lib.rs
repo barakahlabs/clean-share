@@ -1,5 +1,6 @@
 mod bookmarks;
 mod previews;
+mod rules;
 mod settings;
 mod transfer;
 
@@ -8,7 +9,7 @@ use tauri::Manager;
 /// Splits shared text into tracking / non-tracking pieces and returns the cleaned text.
 #[tauri::command]
 fn clean_text(text: &str) -> link_cleaner::Analysis {
-    link_cleaner::analyze(text)
+    link_cleaner::analyze_with(&rules::current(), text)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -32,8 +33,15 @@ pub fn run() {
             app.manage(library);
             app.manage(settings::SettingsState::load(app.handle()));
             app.manage(previews::Previews::new(app.handle()));
+            // Newer rules downloaded earlier: the store cleans with them too. Then saved links
+            // from older rules are re-cleaned, and checking for new rules starts.
+            app.manage(rules::RulesState::load(app.handle()));
+            if app.state::<rules::RulesState>().status().downloaded {
+                bookmarks::use_rules(app.handle(), rules::current());
+            }
             previews::start(app.handle().clone());
             bookmarks::reclean_outdated(app.handle());
+            rules::start(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -54,13 +62,16 @@ pub fn run() {
             previews::bookmark_preview_retry,
             transfer::bookmarks_export,
             transfer::bookmarks_import,
+            rules::rules_status,
+            rules::rules_check,
             settings::settings_get,
             settings::settings_set,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
-            // Back in front (e.g. on Wi-Fi now): let waiting previews go ahead. This is the
+            // Back in front (e.g. on Wi-Fi now): let waiting previews go ahead, and check for new
+            // rules if the last check is an hour old. This is the
             // window's Resumed (Android onResume, iOS willEnterForeground), not RunEvent::Resumed,
             // which is the event loop's.
             #[cfg(mobile)]
@@ -70,6 +81,7 @@ pub fn run() {
             } = event
             {
                 app.state::<previews::Previews>().wake();
+                app.state::<rules::RulesState>().wake_if_due();
             }
             #[cfg(not(mobile))]
             let _ = (app, event);
