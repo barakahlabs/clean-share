@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
 import { shareText } from "../shareTarget";
 import { cleanText, type Analysis } from "../linkCleaner";
-import { prepareBookmark } from "../bookmarks";
+import { CleanedText } from "../components/CleanedText";
+import { CopyButton } from "../components/CopyButton";
+import { useSaveState } from "../hooks/useSaveState";
 import shareIcon from "../assets/share.svg";
 import "./Screen.css";
 import "./SharedTextScreen.css";
-
-/**
- * - `none`: no link in the shared text, so nothing to save
- * - `ready`: a link that isn't saved yet
- * - `saved`: the link is already saved (the button edits it)
- */
-type SaveState = "checking" | "none" | "ready" | "saved" | "error";
 
 type Props = {
   text: string;
@@ -21,33 +16,19 @@ type Props = {
 };
 
 /**
- * Shows text shared from another app with its tracking highlighted, and shares it cleaned.
+ * Shows text shared from another app with its tracking highlighted; copies or shares it cleaned.
  * "Save bookmark" opens the save screen; once the link is saved the button edits it instead.
  */
 export function SharedTextScreen({ text, onClose, onSave }: Props) {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
-  const [save, setSave] = useState<SaveState>("checking");
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const { state: save, error: saveError } = useSaveState(text);
 
   useEffect(() => {
     let current = true;
     setAnalysis(null);
-    setSave("checking");
-    setSaveError(null);
     cleanText(text)
       .then((result) => current && setAnalysis(result))
       .catch(console.error);
-    prepareBookmark(text)
-      .then((prepared) => {
-        if (!current) return;
-        if (!prepared.links.length) setSave("none");
-        else setSave(prepared.existing ? "saved" : "ready");
-      })
-      .catch((error) => {
-        if (!current) return;
-        setSave("error");
-        setSaveError(String(error));
-      });
     return () => {
       current = false;
     };
@@ -62,25 +43,7 @@ export function SharedTextScreen({ text, onClose, onSave }: Props) {
         </button>
       </header>
       {analysis ? (
-        <section className="shared-card">
-          <p className="shared-label">Shared with you</p>
-          <p className="shared-text">
-            {analysis.segments.map((segment, i) =>
-              segment.tracking ? (
-                <mark key={i} className="tracking">
-                  {segment.text}
-                </mark>
-              ) : (
-                <span key={i}>{segment.text}</span>
-              ),
-            )}
-          </p>
-          <p className={analysis.trackingCount ? "tracking-summary found" : "tracking-summary"}>
-            {analysis.trackingCount
-              ? `${trackingLabel(analysis.trackingCount)} will be removed when you share.`
-              : "No tracking found."}
-          </p>
-        </section>
+        <CleanedText analysis={analysis} label="Shared with you" action="when you copy or share" />
       ) : (
         <p className="screen-empty">Cleaning…</p>
       )}
@@ -98,6 +61,7 @@ export function SharedTextScreen({ text, onClose, onSave }: Props) {
             {save === "saved" ? "Edit bookmark" : "Save bookmark"}
           </button>
         )}
+        <CopyButton text={analysis?.cleaned ?? null} label={analysis?.trackingCount ? "Copy clean link" : "Copy"} />
         <button
           type="button"
           className="share-button"
@@ -110,8 +74,4 @@ export function SharedTextScreen({ text, onClose, onSave }: Props) {
       </footer>
     </main>
   );
-}
-
-function trackingLabel(count: number) {
-  return count === 1 ? "1 tracking parameter" : `${count} tracking parameters`;
 }
