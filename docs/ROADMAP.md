@@ -90,8 +90,9 @@ in priority order within each section.
 ## 5. App features
 
 - [ ] Show why each parameter is removed (the rule `reason`) when tapping a red part.
-- [ ] Copy button for the cleaned link (alongside Share).
-- [ ] Paste / type a link inside the app, for links not shared via the share sheet.
+- [x] Copy button for the cleaned link (alongside Share), on the share screen and the Clean tab.
+- [x] Paste / type a link inside the app (Clean tab), for links not shared via the share sheet:
+      cleaned as you type, then copy, share or save.
 - [ ] Android "Process text" action (`ACTION_PROCESS_TEXT`): select text in any app → Clean Share
       cleans it in place.
 - [ ] Quick mode: clean and immediately re-open the share sheet, skipping the screen (setting).
