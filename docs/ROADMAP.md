@@ -100,7 +100,8 @@ in priority order within each section.
 
 ## 5. App features
 
-- [ ] Show why each parameter is removed (the rule `reason`) when tapping a red part.
+- [x] Show why each parameter is removed (the rule `reason`) when tapping a red part; redirects
+      too.
 - [x] Copy button for the cleaned link (alongside Share), on the share screen and the Clean tab.
 - [x] Paste / type a link inside the app (Clean tab), for links not shared via the share sheet:
       cleaned as you type, then copy, share or save.

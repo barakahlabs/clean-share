@@ -73,6 +73,9 @@
   border-radius: 4px;
   text-decoration: line-through;
   text-decoration-thickness: 1px;
+  cursor: pointer;
+  /* A hairline between neighbouring pieces, so each one reads as its own tap target. */
+  margin: 0 1px;
 }
 
 /* The link a redirect leads to, on its own line after the struck-through redirect. */
@@ -87,6 +90,42 @@
   content: "→ ";
   color: var(--muted);
   font-weight: 400;
+}
+
+.tracking.picked {
+  outline: 2px solid var(--danger);
+  outline-offset: 1px;
+}
+
+/* Why the tapped piece is removed. */
+.tracking-why {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--danger-bg);
+}
+
+.tracking-why p {
+  margin: 0;
+}
+
+.tracking-why-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tracking-why-source {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.tracking-why-text {
+  margin-top: 4px !important;
+  font-size: 0.9rem;
+}
+
+.tracking-hint {
+  color: var(--muted);
 }
 
 .tracking-summary {
