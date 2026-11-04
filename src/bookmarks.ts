@@ -174,3 +174,11 @@ export function renameTag(from: string, to: string): Promise<void> {
 export function deleteTag(name: string): Promise<void> {
   return invoke("tag_delete", { name });
 }
+
+/** What re-cleaning did: links looked at, changed, and (of those) merged into another bookmark. */
+export type RecleanReport = { checked: number; changed: number; merged: number; removed: string[] };
+
+/** Cleans every saved link again with the current rules; duplicates that appear are merged. */
+export function recleanBookmarks(): Promise<RecleanReport> {
+  return invoke("bookmarks_reclean");
+}

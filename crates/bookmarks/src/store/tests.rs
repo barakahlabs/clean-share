@@ -4,7 +4,7 @@ use std::sync::{
 };
 
 use super::*;
-use crate::{ListQuery, PreviewStatus, SCHEMA_VERSION, TagCount, TagInput, TagSource};
+use crate::{ListQuery, PreviewStatus, RecleanReport, SCHEMA_VERSION, TagCount, TagInput, TagSource};
 
 /// Each call is one millisecond later, so ordering by time is predictable.
 struct TestClock(AtomicI64);
@@ -696,4 +696,75 @@ async fn a_big_import_adds_everything() {
   assert_eq!((report.added, report.merged, report.skipped), (300, 0, 0));
   let common = store.tags().await.unwrap().into_iter().find(|t| t.name == "common").unwrap();
   assert_eq!(common.count, 300);
+}
+
+/// Newer rules: the bundled ones, plus removing `ref` from every link.
+struct StricterRules;
+
+impl Cleaner for StricterRules {
+  fn links(&self, text: &str) -> Vec<link_cleaner::Link> {
+    BundledRules
+      .links(text)
+      .into_iter()
+      .map(|mut link| {
+        if let Some((base, query)) = link.cleaned.split_once('?') {
+          let kept: Vec<&str> = query.split('&').filter(|p| !p.starts_with("ref=")).collect();
+          link.cleaned = if kept.is_empty() { base.to_string() } else { format!("{base}?{}", kept.join("&")) };
+        }
+        link
+      })
+      .collect()
+  }
+
+  fn revision(&self) -> &str {
+    "stricter"
+  }
+}
+
+#[tokio::test]
+async fn newer_rules_clean_saved_links_again() {
+  let mut store = store().await;
+  let b = store.save(new("https://shop.example/item?id=7&ref=newsletter", &["shop"])).await.unwrap().bookmark;
+  let plain = store.save(new("https://plain.example/page", &[])).await.unwrap().bookmark;
+  assert_eq!(b.url, "https://shop.example/item?id=7&ref=newsletter");
+
+  store.set_cleaner(Arc::new(StricterRules));
+  let report = store.reclean(false).await.unwrap();
+  assert_eq!((report.checked, report.changed, report.merged), (2, 1, 0));
+
+  let after = store.get(&b.id).await.unwrap().unwrap();
+  assert_eq!(after.url, "https://shop.example/item?id=7");
+  assert_eq!(after.original_url, "https://shop.example/item?id=7&ref=newsletter");
+  assert_eq!(after.rules_revision, "stricter");
+  assert_eq!(tag_names(&after), ["shop"]);
+  assert_eq!(store.get(&plain.id).await.unwrap().unwrap().rules_revision, "stricter");
+
+  // Nothing left with the old rules: a second run looks at nothing; `all` looks at everything.
+  assert_eq!(store.reclean(false).await.unwrap().checked, 0);
+  assert_eq!(store.reclean(true).await.unwrap(), RecleanReport { checked: 2, ..Default::default() });
+}
+
+#[tokio::test]
+async fn a_link_that_becomes_a_saved_link_is_merged_into_the_older_one() {
+  let mut store = store().await;
+  let mut older = new("https://shop.example/item?id=7", &["shop"]);
+  older.note = Some("the good one".into());
+  let older = store.save(older).await.unwrap().bookmark;
+  let newer = store.save(new("Item seven https://shop.example/item?id=7&ref=ad", &["deal"])).await.unwrap().bookmark;
+
+  store.set_cleaner(Arc::new(StricterRules));
+  let report = store.reclean(false).await.unwrap();
+  assert_eq!((report.changed, report.merged), (1, 1));
+  assert_eq!(report.removed, std::slice::from_ref(&newer.id));
+
+  assert_eq!(store.get(&newer.id).await.unwrap(), None);
+  let kept = store.get(&older.id).await.unwrap().unwrap();
+  assert_eq!(kept.url, "https://shop.example/item?id=7");
+  assert_eq!(tag_names(&kept), ["shop", "deal"]);
+  // The older one had no title: it takes the newer one's; its own note stays.
+  assert_eq!(kept.title.as_deref(), Some("Item seven"));
+  assert_eq!(kept.note.as_deref(), Some("the good one"));
+  assert_eq!(kept.created_at, older.created_at);
+  // The merged tags are searchable.
+  assert_eq!(search(&store, "deal").await, ["https://shop.example/item?id=7"]);
 }

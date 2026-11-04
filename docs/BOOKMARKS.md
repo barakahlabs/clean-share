@@ -539,8 +539,14 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
       `https://com.sirajulm.cleanshare`, never fetched), so YouTube gets a referrer.
 
 ### Phase 6 – Organize
-- [ ] Edit screen; `reclean_all` on rules updates with a report. (Tag management moved to
-      phase 1: Settings → Tags.)
+- [x] Re-clean on rules updates with a report: `Store::reclean` runs each bookmark's
+      `original_url` through the current rules. On launch it re-cleans the bookmarks saved with
+      another `rules_revision` (quietly); Settings → **Clean saved links again** re-checks all of
+      them and reports how many were checked, changed and merged. A link that becomes another
+      bookmark's link is merged into the older of the two (tags of both; title and note filled
+      where empty; the earlier date); the merged-away bookmark's thumbnail is deleted. A bookmark
+      keeps its ID when its link changes.
+- [x] Edit screen (the save sheet in edit mode, phase 1). Tag management: Settings → Tags.
 
 ### Phase 7 – Import / export
 - [x] Export JSON (full) and Netscape HTML; import browser HTML, Pocket and Raindrop exports (cleaned).
