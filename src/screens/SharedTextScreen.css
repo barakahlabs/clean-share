@@ -75,6 +75,20 @@
   text-decoration-thickness: 1px;
 }
 
+/* The link a redirect leads to, on its own line after the struck-through redirect. */
+.unwrapped {
+  display: block;
+  margin: 4px 0;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.unwrapped::before {
+  content: "→ ";
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .tracking-summary {
   margin: 12px 0 0;
   font-size: 0.85rem;

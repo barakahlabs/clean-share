@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { shareText } from "../shareTarget";
-import { cleanText, type Analysis } from "../linkCleaner";
+import { cleanText, hasTracking, type Analysis } from "../linkCleaner";
 import { pasteText } from "../clipboard";
 import { CleanedText } from "../components/CleanedText";
 import { CopyButton } from "../components/CopyButton";
@@ -98,10 +98,10 @@ export function CleanScreen({ onSave, saves }: Props) {
               {save === "saved" ? "Edit bookmark" : "Save bookmark"}
             </button>
           )}
-          <CopyButton text={analysis.cleaned} label={analysis.trackingCount ? "Copy clean link" : "Copy"} />
+          <CopyButton text={analysis.cleaned} label={hasTracking(analysis) ? "Copy clean link" : "Copy"} />
           <button type="button" className="share-button" onClick={() => shareText(analysis.cleaned).catch(console.error)}>
             <img src={shareIcon} alt="" className="share-icon" />
-            {analysis.trackingCount ? "Share clean link" : "Share"}
+            {hasTracking(analysis) ? "Share clean link" : "Share"}
           </button>
         </footer>
       )}

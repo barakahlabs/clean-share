@@ -30,6 +30,10 @@ pub struct Segment {
   pub text: String,
   /// True if this piece is tracking that the cleaned text drops.
   pub tracking: bool,
+  /// True if this piece isn't in the original: the link a redirect leads to, shown right after
+  /// the redirect link it replaces.
+  #[serde(skip_serializing_if = "std::ops::Not::not")]
+  pub inserted: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -41,6 +45,8 @@ pub struct Analysis {
   pub cleaned: String,
   /// How many tracking parameters were found.
   pub tracking_count: usize,
+  /// How many redirect links were replaced by the link they lead to.
+  pub redirect_count: usize,
 }
 
 /// A link found in shared text, as shared and after cleaning.
@@ -70,10 +76,11 @@ pub fn links_with(rules: &RuleSet, text: &str) -> Vec<Link> {
     .into_iter()
     .map(|range| {
       let original = &text[range];
+      let cleaned = clean_url(rules, original).cleaned;
       Link {
+        provider: provider_for(rules, &host_of(&cleaned)).map(|p| p.id.as_str().to_string()),
         original: original.to_string(),
-        cleaned: clean_url(rules, original).cleaned,
-        provider: provider_for(rules, &host_of(original)).map(|p| p.id.as_str().to_string()),
+        cleaned,
       }
     })
     .collect()
@@ -87,14 +94,20 @@ pub fn analyze_with(rules: &RuleSet, text: &str) -> Analysis {
   let mut tracking_ranges = Vec::new();
   let mut cleaned = String::with_capacity(text.len());
   let mut tracking_count = 0;
+  let mut redirect_count = 0;
   let mut pos = 0;
 
   for url in find_urls(text) {
     let link = clean_url(rules, &text[url.clone()]);
     cleaned.push_str(&text[pos..url.start]);
     cleaned.push_str(&link.cleaned);
-    tracking_count += link.removed.len();
-    tracking_ranges.extend(link.removed.iter().map(|r| r.start + url.start..r.end + url.start));
+    tracking_count += link.params;
+    redirect_count += link.redirects;
+    if link.redirects > 0 {
+      tracking_ranges.push((url.clone(), Some(link.cleaned)));
+    } else {
+      tracking_ranges.extend(link.removed.iter().map(|r| (r.start + url.start..r.end + url.start, None)));
+    }
     pos = url.end;
   }
   cleaned.push_str(&text[pos..]);
@@ -103,19 +116,38 @@ pub fn analyze_with(rules: &RuleSet, text: &str) -> Analysis {
     segments: segments(text, &tracking_ranges),
     cleaned,
     tracking_count,
+    redirect_count,
   }
 }
 
 struct CleanedUrl {
   cleaned: String,
-  /// Ranges (within the URL) of each removed parameter, including its `?`/`&`.
+  /// Ranges (within the URL) of each removed parameter, including its `?`/`&`. Empty for a
+  /// redirect: the whole URL goes.
   removed: Vec<Range<usize>>,
+  /// Tracking parameters removed (for a redirect, those in the link it leads to).
+  params: usize,
+  /// Redirects unwrapped (more than one if a redirect leads to another).
+  redirects: usize,
 }
 
+/// How many redirects inside redirects are followed.
+const MAX_REDIRECTS: usize = 3;
+
 fn clean_url(rules: &RuleSet, url: &str) -> CleanedUrl {
+  clean_url_within(rules, url, MAX_REDIRECTS)
+}
+
+fn clean_url_within(rules: &RuleSet, url: &str, redirects_left: usize) -> CleanedUrl {
+  if redirects_left > 0
+    && let Some(target) = redirect_target(rules, url)
+  {
+    let inner = clean_url_within(rules, &target, redirects_left - 1);
+    return CleanedUrl { redirects: inner.redirects + 1, removed: Vec::new(), ..inner };
+  }
   let fragment_start = url.find('#').unwrap_or(url.len());
   let Some(query_start) = url[..fragment_start].find('?') else {
-    return CleanedUrl { cleaned: url.to_string(), removed: Vec::new() };
+    return CleanedUrl { cleaned: url.to_string(), removed: Vec::new(), params: 0, redirects: 0 };
   };
 
   let host = host_of(url);
@@ -145,7 +177,51 @@ fn clean_url(rules: &RuleSet, url: &str) -> CleanedUrl {
     cleaned.push_str(&kept.join("&"));
   }
   cleaned.push_str(&url[fragment_start..]);
-  CleanedUrl { cleaned, removed }
+  CleanedUrl { cleaned, params: removed.len(), removed, redirects: 0 }
+}
+
+/// The link `url` forwards to, if it's a redirect link in the rules and carries a valid link.
+fn redirect_target(rules: &RuleSet, url: &str) -> Option<String> {
+  let provider = provider_for(rules, &host_of(url))?;
+  let path = link_rules::url_path(url);
+  let redirect = provider.redirects.iter().find(|r| r.path == path)?;
+  let fragment_start = url.find('#').unwrap_or(url.len());
+  let query = &url[url[..fragment_start].find('?')? + 1..fragment_start];
+  redirect.params.iter().find_map(|name| {
+    query
+      .split('&')
+      .filter_map(|p| p.split_once('='))
+      .filter(|(n, _)| n == name)
+      .find_map(|(_, value)| percent_decode(value).filter(|v| is_web_link(v)))
+  })
+}
+
+/// Decodes `%XX` escapes; None if they don't make valid UTF-8.
+fn percent_decode(value: &str) -> Option<String> {
+  let bytes = value.as_bytes();
+  let mut out = Vec::with_capacity(bytes.len());
+  let mut i = 0;
+  while i < bytes.len() {
+    let hex = |b: u8| (b as char).to_digit(16);
+    if bytes[i] == b'%'
+      && let (Some(hi), Some(lo)) = (bytes.get(i + 1).and_then(|&b| hex(b)), bytes.get(i + 2).and_then(|&b| hex(b)))
+    {
+      out.push((hi * 16 + lo) as u8);
+      i += 3;
+    } else {
+      out.push(bytes[i]);
+      i += 1;
+    }
+  }
+  String::from_utf8(out).ok()
+}
+
+/// An http(s) link with a host and no spaces: safe to put in place of the redirect.
+fn is_web_link(link: &str) -> bool {
+  let lower = link.to_ascii_lowercase();
+  let rest = lower.strip_prefix("https://").or_else(|| lower.strip_prefix("http://"));
+  rest.is_some_and(|r| !r.is_empty() && !r.starts_with(['/', '?', '#']))
+    && !link.chars().any(|c| c.is_whitespace() || c.is_control())
 }
 
 /// True if query parameter `name` is tracking for a link on `host` at `path`.
@@ -174,6 +250,8 @@ pub fn check_rule_tests(rules: &RuleSet) -> Vec<String> {
 
   global
     .chain(providers)
+    // A test for a feature this code doesn't have (newer rules): skipped, not failed.
+    .filter(|(_, test)| test.supported())
     .filter_map(|(source, test)| {
       let actual = analyze_with(rules, &test.input).cleaned;
       (actual != test.output).then(|| {
@@ -244,26 +322,30 @@ fn trim_trailing_punctuation(url: &str) -> usize {
   end
 }
 
-/// Splits `text` at the (sorted, non-overlapping) tracking ranges, merging neighbours.
-fn segments(text: &str, tracking: &[Range<usize>]) -> Vec<Segment> {
+/// Splits `text` at the (sorted, non-overlapping) tracking ranges, merging neighbours. A range
+/// with a replacement (a redirect) is followed by the replacement, as an inserted piece.
+fn segments(text: &str, tracking: &[(Range<usize>, Option<String>)]) -> Vec<Segment> {
   let mut out: Vec<Segment> = Vec::new();
-  let mut push = |piece: &str, is_tracking: bool| {
+  let mut push = |piece: &str, tracking: bool, inserted: bool| {
     if piece.is_empty() {
       return;
     }
     match out.last_mut() {
-      Some(last) if last.tracking == is_tracking => last.text.push_str(piece),
-      _ => out.push(Segment { text: piece.to_string(), tracking: is_tracking }),
+      Some(last) if last.tracking == tracking && !last.inserted && !inserted => last.text.push_str(piece),
+      _ => out.push(Segment { text: piece.to_string(), tracking, inserted }),
     }
   };
 
   let mut pos = 0;
-  for range in tracking {
-    push(&text[pos..range.start], false);
-    push(&text[range.clone()], true);
+  for (range, replacement) in tracking {
+    push(&text[pos..range.start], false, false);
+    push(&text[range.clone()], true, false);
+    if let Some(replacement) = replacement {
+      push(replacement, false, true);
+    }
     pos = range.end;
   }
-  push(&text[pos..], false);
+  push(&text[pos..], false, false);
   out
 }
 
@@ -289,6 +371,63 @@ mod tests {
   fn bundled_rule_tests_pass() {
     let failures = check_rule_tests(bundled_rules());
     assert!(failures.is_empty(), "failing rule tests:\n{}", failures.join("\n"));
+  }
+
+  #[test]
+  fn a_redirect_is_highlighted_whole_and_followed_by_its_link() {
+    let text = "see https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.com%2Fa%3Futm_source%3Dfb&h=AT1 now";
+    let analysis = analyze(text);
+    assert_eq!(analysis.cleaned, "see https://example.com/a now");
+    assert_eq!((analysis.redirect_count, analysis.tracking_count), (1, 1));
+    let pieces: Vec<_> = analysis.segments.iter().map(|s| (s.text.as_str(), s.tracking, s.inserted)).collect();
+    assert_eq!(pieces, [
+      ("see ", false, false),
+      ("https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.com%2Fa%3Futm_source%3Dfb&h=AT1", true, false),
+      ("https://example.com/a", false, true),
+      (" now", false, false),
+    ]);
+    assert_eq!(links(text)[0].provider, None, "the provider is the destination's");
+  }
+
+  #[test]
+  fn redirects_without_a_web_link_are_cleaned_as_usual() {
+    for link in [
+      "https://www.google.com/url?q=javascript%3Aalert(1)",
+      "https://www.google.com/url?q=not%20a%20link",
+      "https://www.google.com/url?q=https%3A%2F%2F",
+      "https://www.google.com/url?q=%FF%FE",
+      "https://www.google.com/url?sa=t",
+    ] {
+      let analysis = analyze(link);
+      assert_eq!((analysis.cleaned.as_str(), analysis.redirect_count), (link, 0), "{link}");
+    }
+  }
+
+  #[test]
+  fn redirects_inside_redirects_are_followed_a_few_times() {
+    let inner = "https%3A%2F%2Fl.facebook.com%2Fl.php%3Fu%3Dhttps%253A%252F%252Fexample.com%252F";
+    let analysis = analyze(&format!("https://www.google.com/url?q={inner}"));
+    assert_eq!((analysis.cleaned.as_str(), analysis.redirect_count), ("https://example.com/", 2));
+  }
+
+  #[test]
+  fn tests_for_unknown_features_are_skipped() {
+    let mut rules = bundled_rules().clone();
+    rules.global.tests.push(link_rules::TestCase {
+      input: "https://example.com/?a=1".into(),
+      output: "something a future feature makes".into(),
+      needs: vec!["teleport".into()],
+    });
+    assert!(check_rule_tests(&rules).is_empty());
+    assert_eq!(link_rules::lint(&rules), ["global: test `https://example.com/?a=1` needs unknown feature `teleport`"]);
+  }
+
+  #[test]
+  fn redirect_tests_must_say_they_need_redirects() {
+    let mut rules = bundled_rules().clone();
+    let google = rules.providers.iter_mut().find(|p| p.id.as_str() == "google").unwrap();
+    google.tests[0].needs.clear();
+    assert_eq!(link_rules::lint(&rules).len(), 1);
   }
 
   #[test]

@@ -28,6 +28,11 @@ reason = "Click tracking token"
 param = "__tn__"
 reason = "Click tracking flag"
 
+[[redirect]]
+path = "/l.php"
+params = ["u"]
+reason = "Facebook's link shim (l.facebook.com): records the click before sending you on"
+
 [[test]]
 in = "https://www.facebook.com/share/p/abc123/?mibextid=WC7FNe"
 out = "https://www.facebook.com/share/p/abc123/"
@@ -35,3 +40,8 @@ out = "https://www.facebook.com/share/p/abc123/"
 [[test]]
 in = "https://www.facebook.com/permalink.php?story_fbid=1&id=2&__cft__[0]=AZX&__tn__=%2CO"
 out = "https://www.facebook.com/permalink.php?story_fbid=1&id=2"
+
+[[test]]
+in = "https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.com%2Fstory%3Ffbclid%3DIwAR0x&h=AT0aBcD&__tn__=H-R"
+out = "https://example.com/story"
+needs = ["redirect"]

@@ -40,6 +40,13 @@
       "description": "Display name, e.g. \"X / Twitter\".",
       "type": "string"
     },
+    "redirect": {
+      "description": "Redirect links on these domains, replaced by the link they lead to.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Redirect"
+      }
+    },
     "remove": {
       "description": "Tracking parameters to remove on these domains.",
       "type": "array",
@@ -116,12 +123,49 @@
       ],
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
     },
+    "Redirect": {
+      "description": "A page that only records the click and forwards to another link, which it carries in a\nparameter, e.g. `google.com/url?q=<link>`. Such links are replaced by the link they carry\n(cleaned too). Tests of it need `needs = [\"redirect\"]`.",
+      "type": "object",
+      "properties": {
+        "params": {
+          "description": "Parameters that may hold the destination, tried in order, e.g. `[\"q\", \"url\"]`.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "path": {
+          "description": "The redirect page's path, exactly, e.g. `/url` (`/` for the domain's root).",
+          "type": "string"
+        },
+        "reason": {
+          "description": "What the redirect is for, in plain words.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "params"
+      ]
+    },
     "TestCase": {
       "type": "object",
       "properties": {
         "in": {
           "description": "A link as shared by the app.",
           "type": "string"
+        },
+        "needs": {
+          "description": "Rule features this test relies on (see [`FEATURES`]), e.g. `[\"redirect\"]`.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "out": {
           "description": "The same link after cleaning.",
