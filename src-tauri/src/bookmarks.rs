@@ -241,3 +241,13 @@ pub fn reclean_outdated(app: &AppHandle) {
         }
     });
 }
+
+/// Makes the store clean with `rules` (newer rules than the built-in ones).
+pub fn use_rules(app: &AppHandle, rules: std::sync::Arc<link_rules::RuleSet>) {
+    let library = app.state::<Library>();
+    tauri::async_runtime::block_on(async {
+        if let Some(store) = library.store.lock().await.as_mut() {
+            store.set_cleaner(std::sync::Arc::new(::bookmarks::Rules((*rules).clone())));
+        }
+    });
+}

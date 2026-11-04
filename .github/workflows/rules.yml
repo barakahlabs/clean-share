@@ -1,0 +1,89 @@
+name: Rules
+
+# Publishes the tracking rules for apps to download (crates/rules-update): on every change to the
+# rules (or the code that reads them) on main, or by hand. One file per schema version, overwritten
+# each time: rules/v1/rules.json and its ed25519 signature rules/v1/rules.json.sig, on GitHub
+# Pages (https://barakahlabs.github.io/clean-share/rules/v1/rules.json).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rules/**"
+      - "crates/link-rules/**"
+      - "crates/link-cleaner/**"
+      - "crates/rules-tool/**"
+      - "crates/rules-update/**"
+      - ".github/workflows/rules.yml"
+  workflow_dispatch:
+
+# One publish at a time; a newer one waits rather than cancelling one that's deploying.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build:
+    name: Check, bundle and sign
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: rules
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Rules are valid and their tests pass
+        run: cargo run -p rules-tool -- check
+
+      - name: Bundle
+        run: |
+          mkdir -p site/rules/v1
+          cargo run -p rules-tool -- bundle site/rules/v1/rules.json
+
+      # The private key only exists as a temporary file, readable by this job only.
+      - name: Sign
+        env:
+          RULES_SIGNING_KEY: ${{ secrets.RULES_SIGNING_KEY }}
+        run: |
+          key="$RUNNER_TEMP/rules-signing-key.pem"
+          (umask 077 && printf '%s\n' "$RULES_SIGNING_KEY" > "$key")
+          openssl pkeyutl -sign -inkey "$key" -rawin -in site/rules/v1/rules.json -out site/rules/v1/rules.json.sig
+          rm -f "$key"
+
+      # The app's own check, with the public key compiled into the app: a bundle the app would
+      # refuse (wrong key, failing tests) is never published.
+      - name: Verify as the app will
+        run: cargo run -p rules-update --example verify -- site/rules/v1/rules.json site/rules/v1/rules.json.sig
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}rules/v1/rules.json
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -1,0 +1,17 @@
+[package]
+name = "rules-update"
+version = "0.1.0"
+description = "Clean Share hosted rules: where they're published, and checking a downloaded bundle (signature, format, tests) before the app uses it"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+link-cleaner = { path = "../link-cleaner", default-features = false }
+link-rules = { path = "../link-rules" }
+# ed25519 signatures; already in the app through rustls.
+ring = "0.17"
+thiserror = "2"
+
+[dev-dependencies]
+link-cleaner = { path = "../link-cleaner" }
+serde_json = "1"
