@@ -2,7 +2,9 @@
 # Pinned so CI (.github/workflows/ci.yml) and every machine build with the same versions.
 node = "26"
 pnpm = "12"
-java = "corretto-21.0.3.9.1"
+# Major version only: mise installs the newest Corretto 21, and Renovate offers only new majors
+# (corretto-25), in the same form. A full version gets Renovate updates mise can't install.
+java = "corretto-21"
 # Android command-line tools only; SDK packages come from `mise run android:sdk`.
 android-sdk = "23.0"
 
