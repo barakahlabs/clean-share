@@ -146,7 +146,8 @@ Save shared links with tags, inside this app, local-only. Plan, data model and p
 - [x] Phase 4, first part: keyword suggestions from the page text, on every phone.
 - [ ] Phase 4: on-device AI tagging needs a newer phone (Apple Intelligence: iPhone 15 Pro+;
       Gemini Nano: recent Pixels/Samsungs).
-- [ ] Phase 6: re-clean saved links when the rules change, with a report.
+- [x] Phase 6: re-clean saved links when the rules change (on launch, or Settings → Clean saved
+      links again), merging links that become duplicates, with a report.
 - [ ] Phase 8: accounts and paid sync (one Turso database per user).
 - [ ] Faster big imports: one transaction instead of one save per bookmark.
 
