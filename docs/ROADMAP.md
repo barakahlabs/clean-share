@@ -133,9 +133,9 @@ Save shared links with tags, inside this app, local-only. Plan, data model and p
 - [x] Phase 5: tap-to-play players (YouTube, Vimeo, Spotify, X, TikTok, SoundCloud).
 - [x] Phase 7: export (JSON backup, browser HTML) and import (backups, browser bookmarks, Pocket,
       Raindrop).
-- [ ] Phase 4: AI tagging. On-device AI needs a newer phone (Apple Intelligence: iPhone 15 Pro+;
-      Gemini Nano: recent Pixels/Samsungs). First, keyword suggestions from the page text, which
-      work on every phone.
+- [x] Phase 4, first part: keyword suggestions from the page text, on every phone.
+- [ ] Phase 4: on-device AI tagging needs a newer phone (Apple Intelligence: iPhone 15 Pro+;
+      Gemini Nano: recent Pixels/Samsungs).
 - [ ] Phase 6: re-clean saved links when the rules change, with a report.
 - [ ] Phase 8: accounts and paid sync (one Turso database per user).
 - [ ] Faster big imports: one transaction instead of one save per bookmark.
