@@ -39,3 +39,6 @@ keystore.properties
 *.certSigningRequest
 .env
 .env.*
+
+# Rust build output for the whole workspace (Cargo.toml).
+/target/

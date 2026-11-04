@@ -21,8 +21,9 @@ in priority order within each section.
 - [x] Commit and push the first stacked branches (scaffold, share target, cleaner, rules schema).
 - [x] CI (GitHub Actions on [Blacksmith](https://docs.blacksmith.sh) runners,
       `.github/workflows/ci.yml`) on every PR and push to `main`, skipping changes that only touch docs, `README.md`, `LICENSE` or `renovate.json`:
-  - Rust: `cargo clippy -D warnings` + `cargo test` for each crate in `crates/`
-  - `cargo run -- check` in `crates/rules-tool` (rules valid, tests pass, generated files current)
+  - Rust: `cargo clippy -D warnings` + `cargo test` for the workspace (all crates; the app and
+    the plugin are built by the Android job, since on Linux they need Tauri's system libraries)
+  - `cargo run -p rules-tool -- check` (rules valid, tests pass, generated files current)
   - `pnpm build` (TypeScript + Vite), as part of the Android build (the separate `web` job is
     disabled)
   - Android debug APK (arm64), uploaded as an artifact for 7 days
@@ -166,8 +167,9 @@ Save shared links with tags, inside this app, local-only. Plan, data model and p
 
 ## 8. Technical debt
 
-- [ ] Cargo workspace at the repo root (one `Cargo.lock`, shared `target/`) for `src-tauri`,
-      `crates/*` and `plugins/share-target`, after checking Tauri's mobile builds handle it.
+- [x] Cargo workspace at the repo root (one `Cargo.lock`, shared `target/`) for `src-tauri`,
+      `crates/*` and `plugins/share-target`; Tauri's Android and iOS builds use the shared
+      `target/` (they ask Cargo where it is).
 - [ ] Generated native projects are hand-edited. Document this, and never run `tauri ios init` or
       `tauri android init` again without re-applying:
   - iOS: `src-tauri/gen/apple/project.yml` adds the two share extensions (`ShareExtension`,
