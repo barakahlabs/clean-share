@@ -34,6 +34,24 @@ pub struct Segment {
   /// the redirect link it replaces.
   #[serde(skip_serializing_if = "std::ops::Not::not")]
   pub inserted: bool,
+  /// For a tracking piece: why it's removed. Each removed parameter is its own piece.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub why: Option<Why>,
+}
+
+/// Why something is removed, from the rule that matched it (shown when the piece is tapped).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Why {
+  /// The parameter's name, or for a redirect, its host and path (`www.google.com/url`).
+  pub name: String,
+  /// True for a redirect link (replaced by the link it leads to).
+  #[serde(skip_serializing_if = "std::ops::Not::not")]
+  pub redirect: bool,
+  /// The rule's explanation, if it has one.
+  pub reason: Option<String>,
+  /// Whose rule: the provider's name, or None for the every-site rules.
+  pub source: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -103,10 +121,11 @@ pub fn analyze_with(rules: &RuleSet, text: &str) -> Analysis {
     cleaned.push_str(&link.cleaned);
     tracking_count += link.params;
     redirect_count += link.redirects;
-    if link.redirects > 0 {
-      tracking_ranges.push((url.clone(), Some(link.cleaned)));
+    if let Some(why) = link.redirect {
+      tracking_ranges.push((url.clone(), why, Some(link.cleaned)));
     } else {
-      tracking_ranges.extend(link.removed.iter().map(|r| (r.start + url.start..r.end + url.start, None)));
+      tracking_ranges
+        .extend(link.removed.into_iter().map(|(r, why)| (r.start + url.start..r.end + url.start, why, None)));
     }
     pos = url.end;
   }
@@ -122,9 +141,11 @@ pub fn analyze_with(rules: &RuleSet, text: &str) -> Analysis {
 
 struct CleanedUrl {
   cleaned: String,
-  /// Ranges (within the URL) of each removed parameter, including its `?`/`&`. Empty for a
-  /// redirect: the whole URL goes.
-  removed: Vec<Range<usize>>,
+  /// Ranges (within the URL) of each removed parameter, including its `?`/`&`, and why. Empty
+  /// for a redirect: the whole URL goes.
+  removed: Vec<(Range<usize>, Why)>,
+  /// Set if the URL is a redirect: why it's replaced.
+  redirect: Option<Why>,
   /// Tracking parameters removed (for a redirect, those in the link it leads to).
   params: usize,
   /// Redirects unwrapped (more than one if a redirect leads to another).
@@ -140,14 +161,14 @@ fn clean_url(rules: &RuleSet, url: &str) -> CleanedUrl {
 
 fn clean_url_within(rules: &RuleSet, url: &str, redirects_left: usize) -> CleanedUrl {
   if redirects_left > 0
-    && let Some(target) = redirect_target(rules, url)
+    && let Some((target, why)) = redirect_target(rules, url)
   {
     let inner = clean_url_within(rules, &target, redirects_left - 1);
-    return CleanedUrl { redirects: inner.redirects + 1, removed: Vec::new(), ..inner };
+    return CleanedUrl { redirects: inner.redirects + 1, removed: Vec::new(), redirect: Some(why), ..inner };
   }
   let fragment_start = url.find('#').unwrap_or(url.len());
   let Some(query_start) = url[..fragment_start].find('?') else {
-    return CleanedUrl { cleaned: url.to_string(), removed: Vec::new(), params: 0, redirects: 0 };
+    return CleanedUrl { cleaned: url.to_string(), removed: Vec::new(), redirect: None, params: 0, redirects: 0 };
   };
 
   let host = host_of(url);
@@ -163,9 +184,9 @@ fn clean_url_within(rules: &RuleSet, url: &str, redirects_left: usize) -> Cleane
       continue;
     }
     let name = param.split('=').next().unwrap_or(param);
-    if is_tracking(rules, &host, path, name) {
+    if let Some(why) = why_tracking(rules, &host, path, name) {
       // Include the separator before it, so "?" disappears when nothing is left.
-      removed.push(range.start - 1..range.end);
+      removed.push((range.start - 1..range.end, why));
     } else {
       kept.push(param);
     }
@@ -177,14 +198,21 @@ fn clean_url_within(rules: &RuleSet, url: &str, redirects_left: usize) -> Cleane
     cleaned.push_str(&kept.join("&"));
   }
   cleaned.push_str(&url[fragment_start..]);
-  CleanedUrl { cleaned, params: removed.len(), removed, redirects: 0 }
+  CleanedUrl { cleaned, params: removed.len(), removed, redirect: None, redirects: 0 }
 }
 
 /// The link `url` forwards to, if it's a redirect link in the rules and carries a valid link.
-fn redirect_target(rules: &RuleSet, url: &str) -> Option<String> {
-  let provider = provider_for(rules, &host_of(url))?;
+fn redirect_target(rules: &RuleSet, url: &str) -> Option<(String, Why)> {
+  let host = host_of(url);
+  let provider = provider_for(rules, &host)?;
   let path = link_rules::url_path(url);
   let redirect = provider.redirects.iter().find(|r| r.path == path)?;
+  let why = Why {
+    name: format!("{host}{path}"),
+    redirect: true,
+    reason: redirect.reason.clone(),
+    source: Some(provider.name.clone()),
+  };
   let fragment_start = url.find('#').unwrap_or(url.len());
   let query = &url[url[..fragment_start].find('?')? + 1..fragment_start];
   redirect.params.iter().find_map(|name| {
@@ -194,6 +222,7 @@ fn redirect_target(rules: &RuleSet, url: &str) -> Option<String> {
       .filter(|(n, _)| n == name)
       .find_map(|(_, value)| percent_decode(value).filter(|v| is_web_link(v)))
   })
+  .map(|target| (target, why))
 }
 
 /// Decodes `%XX` escapes; None if they don't make valid UTF-8.
@@ -226,18 +255,34 @@ fn is_web_link(link: &str) -> bool {
 
 /// True if query parameter `name` is tracking for a link on `host` at `path`.
 pub fn is_tracking(rules: &RuleSet, host: &str, path: &str, name: &str) -> bool {
+  why_tracking(rules, host, path, name).is_some()
+}
+
+/// Why query parameter `name` is tracking for a link on `host` at `path`, or None if it isn't.
+fn why_tracking(rules: &RuleSet, host: &str, path: &str, name: &str) -> Option<Why> {
+  let why = |reason: Option<&String>, source: Option<&String>| Why {
+    name: name.to_string(),
+    redirect: false,
+    reason: reason.cloned(),
+    source: source.cloned(),
+  };
   if let Some(provider) = provider_for(rules, host) {
     if provider.keep.iter().any(|k| k.matches(name)) {
-      return false;
+      return None;
     }
     let excepted = provider.except.iter().any(|prefix| path.starts_with(prefix.as_str()));
-    if !excepted
-      && (provider.strip_unknown || provider.remove.iter().any(|r| r.param.matches(name)))
-    {
-      return true;
+    if !excepted {
+      if let Some(rule) = provider.remove.iter().find(|r| r.param.matches(name)) {
+        return Some(why(rule.reason.as_ref(), Some(&provider.name)));
+      }
+      // Global rules explain it better, if one matches.
+      if provider.strip_unknown && !rules.global.remove.iter().any(|r| r.param.matches(name)) {
+        let reason = format!("{} links work without it, so every parameter they don't need is removed", provider.name);
+        return Some(why(Some(&reason), Some(&provider.name)));
+      }
     }
   }
-  rules.global.remove.iter().any(|r| r.param.matches(name))
+  rules.global.remove.iter().find(|r| r.param.matches(name)).map(|rule| why(rule.reason.as_ref(), None))
 }
 
 /// Runs every `[[test]]` in the rules. Returns one message per failing test.
@@ -322,30 +367,31 @@ fn trim_trailing_punctuation(url: &str) -> usize {
   end
 }
 
-/// Splits `text` at the (sorted, non-overlapping) tracking ranges, merging neighbours. A range
-/// with a replacement (a redirect) is followed by the replacement, as an inserted piece.
-fn segments(text: &str, tracking: &[(Range<usize>, Option<String>)]) -> Vec<Segment> {
+/// Splits `text` at the (sorted, non-overlapping) tracking ranges: one piece per range, with why
+/// it's removed. A range with a replacement (a redirect) is followed by the replacement, as an
+/// inserted piece. Neighbouring plain text is merged.
+fn segments(text: &str, tracking: &[(Range<usize>, Why, Option<String>)]) -> Vec<Segment> {
   let mut out: Vec<Segment> = Vec::new();
-  let mut push = |piece: &str, tracking: bool, inserted: bool| {
+  let plain = |out: &mut Vec<Segment>, piece: &str| {
     if piece.is_empty() {
       return;
     }
     match out.last_mut() {
-      Some(last) if last.tracking == tracking && !last.inserted && !inserted => last.text.push_str(piece),
-      _ => out.push(Segment { text: piece.to_string(), tracking, inserted }),
+      Some(last) if !last.tracking && !last.inserted => last.text.push_str(piece),
+      _ => out.push(Segment { text: piece.to_string(), tracking: false, inserted: false, why: None }),
     }
   };
 
   let mut pos = 0;
-  for (range, replacement) in tracking {
-    push(&text[pos..range.start], false, false);
-    push(&text[range.clone()], true, false);
+  for (range, why, replacement) in tracking {
+    plain(&mut out, &text[pos..range.start]);
+    out.push(Segment { text: text[range.clone()].to_string(), tracking: true, inserted: false, why: Some(why.clone()) });
     if let Some(replacement) = replacement {
-      push(replacement, false, true);
+      out.push(Segment { text: replacement.clone(), tracking: false, inserted: true, why: None });
     }
     pos = range.end;
   }
-  push(&text[pos..], false, false);
+  plain(&mut out, &text[pos..]);
   out
 }
 
@@ -431,9 +477,27 @@ mod tests {
   }
 
   #[test]
+  fn each_removed_piece_says_why() {
+    let whys: Vec<_> = analyze("https://youtu.be/x?si=abc&utm_source=yt&t=4 https://www.instagram.com/p/a/?srtk=1&zz=2")
+      .segments
+      .into_iter()
+      .filter_map(|s| s.why)
+      .map(|w| (w.name, w.source, w.reason.is_some()))
+      .collect();
+    assert_eq!(whys, [
+      ("si".into(), Some("YouTube".into()), true),
+      ("utm_source".into(), None, true),
+      ("srtk".into(), Some("Instagram".into()), true),
+      ("zz".into(), Some("Instagram".into()), true),
+    ]);
+    let redirect = analyze("https://www.google.com/url?q=https%3A%2F%2Fexample.com%2F").segments[0].why.clone().unwrap();
+    assert_eq!((redirect.name.as_str(), redirect.redirect, redirect.source.as_deref()), ("www.google.com/url", true, Some("Google")));
+  }
+
+  #[test]
   fn highlights_tracking_with_its_separator() {
     let link = "https://x.com/someone/status/1?s=46&t=AbC";
-    assert_eq!(highlighted(link), ["?s=46&t=AbC"]);
+    assert_eq!(highlighted(link), ["?s=46", "&t=AbC"]);
     assert_eq!(highlighted("https://youtu.be/x?si=abc&t=42"), ["?si=abc"]);
   }
 

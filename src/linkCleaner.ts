@@ -1,8 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
 
+/** Why a piece is removed, from the rule that matched it. */
+export type Why = {
+  /** The parameter's name, or for a redirect its host and path. */
+  name: string;
+  redirect?: boolean;
+  reason: string | null;
+  /** Whose rule: a provider's name, or null for the every-site rules. */
+  source: string | null;
+};
+
 export type Segment = {
   text: string;
   tracking: boolean;
+  /** For a tracking piece: why it's removed. */
+  why?: Why;
   /** Not in the original: the link a redirect leads to, right after the redirect it replaces. */
   inserted?: boolean;
 };
