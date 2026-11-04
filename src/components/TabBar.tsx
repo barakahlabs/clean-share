@@ -1,10 +1,16 @@
 import "./TabBar.css";
 
-export type Tab = "bookmarks" | "settings";
+export type Tab = "bookmarks" | "clean" | "settings";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  // Bookmark ribbon and a gear, as simple strokes so they follow the text color.
+  // Bookmark ribbon, chain links and a gear, as simple strokes so they follow the text color.
   { id: "bookmarks", label: "Bookmarks", icon: "M6 3h12v18l-6-4-6 4z" },
+  // Two chain links: paste or type a link to clean.
+  {
+    id: "clean",
+    label: "Clean",
+    icon: "M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.1 1.1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.1-1.1",
+  },
   {
     id: "settings",
     label: "Settings",
