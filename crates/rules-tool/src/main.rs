@@ -43,7 +43,8 @@ fn main() -> ExitCode {
 /// Loads and validates the rules, then runs every `[[test]]`.
 fn load_and_test(rules_dir: &Path) -> Result<RuleSet, Vec<String>> {
   let rules = link_rules::load_dir(rules_dir)?;
-  let failures = link_cleaner::check_rule_tests(&rules);
+  let mut failures = link_rules::lint(&rules);
+  failures.extend(link_cleaner::check_rule_tests(&rules));
   if failures.is_empty() { Ok(rules) } else { Err(failures) }
 }
 
@@ -125,10 +126,10 @@ fn readme_tables(rules: &RuleSet) -> String {
 
   md.push_str(&format!("Rules revision `{}`.\n\n", rules.revision));
 
-  md.push_str("### Overview\n\n| Platform | Domains | Removed | Always kept | Not applied on |\n|---|---|---|---|---|\n");
+  md.push_str("### Overview\n\n| Platform | Domains | Removed | Always kept | Not applied on | Redirects |\n|---|---|---|---|---|---|\n");
   for p in &rules.providers {
     md.push_str(&format!(
-      "| [{}](providers/{}.toml) | {} | {} | {} | {} |\n",
+      "| [{}](providers/{}.toml) | {} | {} | {} | {} | {} |\n",
       p.name,
       p.id,
       code_list(p.domains.iter().map(ToString::to_string).collect()),
@@ -144,6 +145,7 @@ fn readme_tables(rules: &RuleSet) -> String {
       },
       code_list(p.keep.iter().map(ToString::to_string).collect()),
       code_list(p.except.iter().map(ToString::to_string).collect()),
+      code_list(p.redirects.iter().map(|r| r.path.clone()).collect()),
     ));
   }
 
@@ -169,6 +171,17 @@ fn readme_tables(rules: &RuleSet) -> String {
       }
     } else {
       md.push_str(&param_table(&p.remove));
+    }
+    if !p.redirects.is_empty() {
+      md.push_str("\nRedirect links, replaced by the link they lead to:\n\n| Path | Link in | What it is |\n|---|---|---|\n");
+      for r in &p.redirects {
+        md.push_str(&format!(
+          "| `{}` | {} | {} |\n",
+          r.path,
+          r.params.iter().map(|p| format!("`{p}`")).collect::<Vec<_>>().join(", "),
+          r.reason.as_deref().unwrap_or("")
+        ));
+      }
     }
   }
 

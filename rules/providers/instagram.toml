@@ -21,6 +21,12 @@ reason = "Share tracking token"
 param = "obrf"
 reason = "Share tracking token"
 
+# Links in bios and stories go through l.instagram.com/?u=<link>.
+[[redirect]]
+path = "/"
+params = ["u"]
+reason = "Instagram's link shim (l.instagram.com): records the click before sending you on"
+
 [[test]]
 in = "https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MWQ1ZGUxMzBkMA=="
 out = "https://www.instagram.com/reel/C1a2B3c4D5e/"
@@ -40,3 +46,8 @@ out = "https://www.instagram.com/reel/C1a2B3c4D5e/"
 [[test]]
 in = "https://www.instagram.com/p/abc/?img_index=2&igsh=xyz"
 out = "https://www.instagram.com/p/abc/?img_index=2"
+
+[[test]]
+in = "https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2Fshop%3Futm_source%3Dig&e=AT1xYz"
+out = "https://example.com/shop"
+needs = ["redirect"]

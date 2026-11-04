@@ -1,0 +1,24 @@
+#:schema ../schema/provider.json
+id = "google"
+name = "Google"
+domains = ["google.com"]
+
+[[redirect]]
+path = "/url"
+params = ["q", "url"]
+reason = "Google's click-tracking page: links from search results, Gmail and Docs pass through it"
+
+[[test]]
+in = "https://www.google.com/url?sa=t&source=web&rct=j&url=https%3A%2F%2Fexample.com%2Fguide%3Fpage%3D2%26utm_source%3Dgoogle&ved=2ahUKEwiX&usg=AOvVaw1"
+out = "https://example.com/guide?page=2"
+needs = ["redirect"]
+
+[[test]]
+in = "https://www.google.com/url?q=https://example.org/a&sa=D&source=docs&ust=1730000000&usg=AOvVaw2"
+out = "https://example.org/a"
+needs = ["redirect"]
+
+# Search links stay as they are: only /url is a redirect.
+[[test]]
+in = "https://www.google.com/search?q=https%3A%2F%2Fexample.com"
+out = "https://www.google.com/search?q=https%3A%2F%2Fexample.com"

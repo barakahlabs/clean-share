@@ -85,12 +85,14 @@ in priority order within each section.
 
 - [ ] Check every rule against real links shared from each app (Android and iOS), and keep the
       examples as `[[test]]` entries.
-- [ ] Schema v2 additions (bump `schema`, keep v1 readable):
+- [x] Redirect links are replaced by the link they lead to (`[[redirect]]`): `google.com/url`,
+      `l.facebook.com/l.php`, `l.instagram.com/?u=`, `youtube.com/redirect`,
+      `linkedin.com/redir/redirect`. Still `schema = 1`: tests say which feature they need
+      (`needs = ["redirect"]`), and older apps skip those tests instead of refusing the rules.
+- [ ] More rule features (the same way: a `needs` name, older apps skip their tests):
   - `referral`: affiliate parameters (e.g. Amazon `tag`), removal controlled by a user setting.
-  - `unwrap`: extract the real destination from redirect links (`google.com/url?q=`,
-    `l.facebook.com/l.php?u=`, `youtube.com/redirect?q=`, `l.instagram.com/?u=`).
   - Path rules for sites that track in the path (Amazon `/ref=…`), only where tests prove it's safe.
-- [ ] New providers: Amazon, Google, Pinterest, Snapchat, Bluesky, Medium, Substack, AliExpress,
+- [ ] New providers: Amazon, Pinterest, Snapchat, Bluesky, Medium, Substack, AliExpress,
       Shopee, newsletters (beehiiv, ConvertKit). Use ClearURLs as a reference, not a source to copy.
 - [ ] Short links (`t.co`, `bit.ly`, `vm.tiktok.com`) hide their tracking behind a redirect.
       Expanding them needs a network request: make it opt-in and explain it.

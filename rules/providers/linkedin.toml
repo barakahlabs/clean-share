@@ -35,6 +35,16 @@ reason = "Email tracking ID"
 param = "rcm"
 reason = "Recommendation tracking"
 
+[[redirect]]
+path = "/redir/redirect"
+params = ["url"]
+reason = "LinkedIn's link redirect (from posts and messages): records the click"
+
 [[test]]
 in = "https://www.linkedin.com/posts/someone_activity-123?utm_source=share&rcm=ACoAA&trk=public_post"
 out = "https://www.linkedin.com/posts/someone_activity-123"
+
+[[test]]
+in = "https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fexample.com%2Fjobs&urlhash=a1B2&trk=public_post-text"
+out = "https://example.com/jobs"
+needs = ["redirect"]

@@ -24,6 +24,11 @@ pub use types::{Domain, ParamPattern, PathPrefix, ProviderId};
 /// The TOML files are still strict: [`load_dir`] reports unknown keys as errors (typos).
 pub const SCHEMA_VERSION: u32 = 1;
 
+/// Rule features this code supports, beyond the first format. A `[[test]]` that uses one says so
+/// (`needs = ["redirect"]`); an app without it skips that test instead of refusing the rules, and
+/// just doesn't apply that part.
+pub const FEATURES: &[&str] = &["redirect"];
+
 /// `rules/manifest.toml`
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[schemars(deny_unknown_fields)]
@@ -70,6 +75,9 @@ pub struct Provider {
   /// parameters and that keep inventing new tracking names (e.g. Instagram).
   #[serde(default, skip_serializing_if = "std::ops::Not::not")]
   pub strip_unknown: bool,
+  /// Redirect links on these domains, replaced by the link they lead to.
+  #[serde(default, rename = "redirect", skip_serializing_if = "Vec::is_empty")]
+  pub redirects: Vec<Redirect>,
   /// Example links and their expected cleaned version. At least one.
   #[serde(rename = "test")]
   #[schemars(length(min = 1))]
@@ -85,6 +93,22 @@ pub struct ParamRule {
   pub reason: Option<String>,
 }
 
+/// A page that only records the click and forwards to another link, which it carries in a
+/// parameter, e.g. `google.com/url?q=<link>`. Such links are replaced by the link they carry
+/// (cleaned too). Tests of it need `needs = ["redirect"]`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[schemars(deny_unknown_fields)]
+pub struct Redirect {
+  /// The redirect page's path, exactly, e.g. `/url` (`/` for the domain's root).
+  pub path: String,
+  /// Parameters that may hold the destination, tried in order, e.g. `["q", "url"]`.
+  #[schemars(length(min = 1))]
+  pub params: Vec<String>,
+  /// What the redirect is for, in plain words.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub reason: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct TestCase {
@@ -94,6 +118,16 @@ pub struct TestCase {
   /// The same link after cleaning.
   #[serde(rename = "out")]
   pub output: String,
+  /// Rule features this test relies on (see [`FEATURES`]), e.g. `["redirect"]`.
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub needs: Vec<String>,
+}
+
+impl TestCase {
+  /// True if this code has every feature the test needs.
+  pub fn supported(&self) -> bool {
+    self.needs.iter().all(|n| FEATURES.contains(&n.as_str()))
+  }
 }
 
 /// All rules combined: the embedded defaults and the hosted `rules.json` bundle.
@@ -206,6 +240,18 @@ pub fn validate(rules: &RuleSet) -> Result<(), Vec<String>> {
         errors.push(format!("{id}: domain `{domain}` is already covered by `{owner}`"));
       }
     }
+    let mut paths = HashMap::new();
+    for redirect in &provider.redirects {
+      if !redirect.path.starts_with('/') {
+        errors.push(format!("{id}: redirect path `{}` must start with `/`", redirect.path));
+      }
+      if redirect.params.is_empty() {
+        errors.push(format!("{id}: redirect `{}` needs at least one parameter", redirect.path));
+      }
+      if paths.insert(redirect.path.as_str(), ()).is_some() {
+        errors.push(format!("{id}: redirect `{}` is listed twice", redirect.path));
+      }
+    }
     for kept in &provider.keep {
       let literal = kept.as_str().trim_end_matches('*');
       if let Some(rule) = provider.remove.iter().find(|r| r.param.matches(literal)) {
@@ -218,6 +264,40 @@ pub fn validate(rules: &RuleSet) -> Result<(), Vec<String>> {
   }
 
   if errors.is_empty() { Ok(()) } else { Err(errors) }
+}
+
+/// Problems that only matter when writing rules (`rules-tool check`), not when reading a bundle
+/// from newer rules: a test needing a feature nobody has (a typo), or a redirect test that doesn't
+/// say it needs `redirect` (an older app would fail it and refuse all the rules).
+pub fn lint(rules: &RuleSet) -> Vec<String> {
+  let mut problems = Vec::new();
+  let tests = rules
+    .global
+    .tests
+    .iter()
+    .map(|t| ("global", None, t))
+    .chain(rules.providers.iter().flat_map(|p| p.tests.iter().map(move |t| (p.id.as_str(), Some(p), t))));
+  for (source, provider, test) in tests {
+    for need in &test.needs {
+      if !FEATURES.contains(&need.as_str()) {
+        problems.push(format!("{source}: test `{}` needs unknown feature `{need}`", test.input));
+      }
+    }
+    let redirect_paths = provider.map(|p| p.redirects.as_slice()).unwrap_or_default();
+    let path = url_path(&test.input);
+    if redirect_paths.iter().any(|r| r.path == path) && !test.needs.iter().any(|n| n == "redirect") {
+      problems.push(format!("{source}: test `{}` is a redirect link: add `needs = [\"redirect\"]`", test.input));
+    }
+  }
+  problems
+}
+
+/// Path of a URL, `/` if none: "https://a.com/x?y" → "/x".
+pub fn url_path(url: &str) -> &str {
+  let after_scheme = url.split_once("://").map_or(url, |(_, rest)| rest);
+  let rest = &after_scheme[after_scheme.find(['/', '?', '#']).unwrap_or(after_scheme.len())..];
+  let path = &rest[..rest.find(['?', '#']).unwrap_or(rest.len())];
+  if path.is_empty() { "/" } else { path }
 }
 
 /// Reads a rules bundle (the hosted `rules.json`, or the one embedded at build time) and validates
