@@ -37,32 +37,20 @@ jobs:
           rustup toolchain install stable --profile minimal --component clippy
           rustup default stable
 
-      # Each crate in crates/ is its own Cargo project (no workspace), so list them for the cache.
-      - name: List crates
-        id: crates
-        run: |
-          {
-            echo "workspaces<<EOF"
-            for dir in crates/*/; do echo "${dir%/} -> target"; done
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
+      # One Cargo workspace (Cargo.toml at the root), one target/ for everything.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
-          workspaces: ${{ steps.crates.outputs.workspaces }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: Clippy and tests, per crate
+      # The app and the plugin need Tauri's system libraries (WebKitGTK…) on Linux; the Android
+      # job builds them. Everything else is checked here.
+      - name: Clippy and tests
         run: |
-          for dir in crates/*/; do
-            echo "::group::${dir%/}"
-            (cd "$dir" && cargo clippy --all-targets -- -D warnings && cargo test)
-            echo "::endgroup::"
-          done
+          cargo clippy --workspace --exclude clean-share --exclude tauri-plugin-share-target --all-targets -- -D warnings
+          cargo test --workspace --exclude clean-share --exclude tauri-plugin-share-target
 
       - name: Rules are valid, their tests pass, generated files are current
-        working-directory: crates/rules-tool
-        run: cargo run -- check
+        run: cargo run -p rules-tool -- check
 
   # Frontend job, disabled: the Android job runs `pnpm build` too (Tauri's beforeBuildCommand),
   # so frontend errors already fail CI there. Uncomment for a separate, faster frontend check.
@@ -100,7 +88,6 @@ jobs:
 
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
-          workspaces: src-tauri -> target
           key: android
           save-if: ${{ github.ref == 'refs/heads/main' }}
 

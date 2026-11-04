@@ -65,13 +65,16 @@ Debug builds: `pnpm tauri android build --debug --apk --target aarch64`,
 ## Test
 
 ```sh
-cd crates/<crate> && cargo clippy --all-targets -- -D warnings && cargo test   # each crate
-cd crates/rules-tool && cargo run -- check                                    # rules
-pnpm build                                                                     # TypeScript
+cargo clippy --workspace --all-targets -- -D warnings   # everything, from the repo root
+cargo test --workspace
+cargo run -p rules-tool -- check                        # rules
+pnpm build                                              # TypeScript
 ```
 
-The crates aren't a Cargo workspace yet, so each is tested on its own (as CI does).
-`cargo run --example preview -- <link>` in `crates/link-preview` prints a live preview.
+One Cargo workspace (`Cargo.toml` at the root) holds the app, the crates and the plugin, with one
+`Cargo.lock` and one `target/`. On Linux, add `--exclude clean-share --exclude
+tauri-plugin-share-target` unless Tauri's system libraries are installed (CI does this).
+`cargo run -p link-preview --example preview -- <link>` prints a live preview.
 
 ## CI
 
