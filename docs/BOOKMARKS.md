@@ -377,6 +377,15 @@ in). Each reason adds to a tag's score:
   the page kind as a tag (1): recipe, video, music, podcast, book, movie, event, product →
   `shopping`. The page's description and excerpt also count as content. The save sheet's fetched
   preview is used before saving; a saved bookmark's stored preview when editing.
+- **Text** (0.6, then 0.55): for pages that declare few or no keywords, up to 2 keywords picked
+  from the readable text (`tag-suggest/src/keywords.rs`, no model): words score by where they
+  appear (title 3, description/excerpt 2, shared text 1) and need 3 (once in the title, or a few
+  times elsewhere); common English and German words, web filler, generic words ("update",
+  "guide"), past tenses and adverbs ("plotted", "quickly"), numbers and the site's own name are
+  skipped; two-word phrases count when they appear twice and replace their words; acronyms keep
+  their case ("AI", "F1"). Ranked below everything else, and never one that is an existing tag or
+  shares a word with a tag already suggested. On real links: NYT → binance; Guardian → UK, cyber;
+  Rust blog → rustup; CNN → openai, AI; Allrecipes → lasagna.
 - "Share" is the fraction of that group's bookmarks with the tag, from the newest 500 at most. The
   bookmark being edited is left out of both groups.
 - Ranked by score, then by how often the tag is used, then by name; top 5 shown as chips under the
@@ -513,6 +522,8 @@ Checked with `turso` 0.8.3 (12 Oct 2026) on macOS, plus release builds for `aarc
   Wi-Fi on a metered connection, sent and received 0 bytes.
 
 ### Phase 4 – AI tagging
+- [x] Without a model, on every phone: keywords from the page's text (the `text` reason in tag
+      suggestions).
 - [ ] `plugins/on-device-ai` (Swift Foundation Models, Kotlin ML Kit GenAI), availability check.
 - [ ] Decide cloud option (own key vs. proxy); implement behind the same trait; opt-in setting.
 - [ ] Suggestions show their source; accepted tags store it.

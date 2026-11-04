@@ -176,3 +176,41 @@ fn the_page_kind_suggests_a_tag() {
   );
   assert!(suggest(&page("", &[], Some("article")), &History::default(), &[]).is_empty());
 }
+
+fn prose(title: &str, summary: &str) -> Content {
+  Content { title: title.into(), summary: summary.into(), host: Some("www.youtube.com".into()), ..Default::default() }
+}
+
+#[test]
+fn keywords_from_the_text_fill_in_when_the_page_declares_none() {
+  let got = suggest(
+    &prose("Can Ferrari Win the 2027 F1 Championship?", "The chances of Ferrari winning the F1 World Championship."),
+    &History::default(),
+    &[],
+  );
+  let mut names: Vec<&str> = got.iter().map(|(n, _)| n.as_str()).collect();
+  names.sort();
+  // At most two from the text; these three tie, so which two is a matter of order.
+  assert_eq!(names.len(), 2);
+  assert!(names.iter().all(|n| ["F1", "championship", "ferrari"].contains(n)), "{names:?}");
+  assert!(got.iter().all(|(_, r)| *r == Reason::Text));
+}
+
+#[test]
+fn text_keywords_rank_below_everything_else() {
+  let mut content = prose("Ferrari engines explained", "How Ferrari builds engines.");
+  content.kind = Some("video".into());
+  let got = suggest(&content, &History::default(), &[]);
+  assert_eq!(got[0], ("video".into(), Reason::Page));
+  assert!(got[1..].iter().all(|(_, r)| *r == Reason::Text), "{got:?}");
+}
+
+#[test]
+fn an_existing_tag_in_the_text_is_one_content_match_not_two() {
+  let history = History { tags: tags(&[("ferrari", 2)]), ..Default::default() };
+  let mut content = prose("Ferrari engines explained", "How Ferrari builds engines.");
+  content.text = "Ferrari engines explained".into();
+  let got = MatchSuggester.suggest(&content, &history, &[], 5);
+  let ferrari = got.iter().find(|s| s.name == "ferrari").unwrap();
+  assert_eq!((ferrari.reason, ferrari.score), (Reason::Content, 3.0));
+}
