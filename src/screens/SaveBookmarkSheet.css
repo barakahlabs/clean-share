@@ -1,8 +1,102 @@
+/* Title in the middle, × on the right (an empty cell on the left keeps it centred). */
 .save-header {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  text-align: center;
+}
+
+.sheet-close {
+  justify-self: end;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--background);
+  cursor: pointer;
+}
+
+.sheet-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* The link as shared, editable, with what cleaning removes and icon-only Copy and Share. */
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+
+.link-row:focus-within {
+  border-color: var(--text);
+  background: var(--surface);
+}
+
+.link-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: none;
+  text-overflow: ellipsis;
+}
+
+.link-removed {
+  flex: none;
+  padding: 4px 2px;
+  border: none;
+  font: inherit;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: var(--danger);
+  background: none;
+  cursor: pointer;
+}
+
+.icon-button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.icon-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* "What's removed and why", under the link: the shared text with its tracking struck through. */
+.save-field .shared-card {
+  padding: 12px;
+  box-shadow: none;
+  background: var(--background);
 }
 
 /* The form fills the sheet: fields scroll, the Save button stays at the bottom. */
@@ -92,6 +186,35 @@
 .save-button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* Saved: green with a check, for a moment before the sheet closes. */
+.save-button.saved {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  background: #1f9d55;
+  opacity: 1;
+  animation: saved-pop 260ms ease-out;
+}
+
+.save-button.saved svg {
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes saved-pop {
+  40% {
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-button.saved {
+    animation: none;
+  }
 }
 
 /* Suggested tags: dashed, so they read as "not added yet". One tap adds one. */

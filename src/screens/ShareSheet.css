@@ -1,0 +1,53 @@
+.share-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* The text sits straight on the sheet, not in a card of its own. */
+.share-sheet .shared-card {
+  padding: 0;
+  box-shadow: none;
+  background: none;
+}
+
+.share-sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.share-sheet-actions .share-button {
+  min-width: 0;
+  padding: 12px 16px;
+  box-shadow: none;
+}
+
+.share-sheet-actions .wide {
+  grid-column: 1 / -1;
+}
+
+.share-button.primary {
+  color: var(--background);
+  background: var(--text);
+  border-color: var(--text);
+}
+
+/* The share icon is drawn for light buttons; on the dark one it turns light. */
+.share-button.primary .share-icon {
+  filter: invert(1) grayscale(1) brightness(2);
+}
+
+.share-chevron {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
