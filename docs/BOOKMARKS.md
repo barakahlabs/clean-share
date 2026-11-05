@@ -423,16 +423,17 @@ leaving the screen.
 
 ## UI
 
-- **App shell**: bottom tabs **Bookmarks**, **Clean** and **Settings**; the share sheet
-  (`ShareSheet`) opens over them when something is shared. Closing a sheet another app opened
-  returns to that app (Android).
+- **App shell**: bottom tabs **Bookmarks** and **Settings**, with a **Clean** button between them;
+  the share sheet (`ShareSheet`) opens over them when something is shared, or empty from Clean.
+  Closing a sheet another app opened returns to that app (Android).
 - **ShareSheet**: a bottom sheet. Step 1: the shared text with tracking struck through, Copy, Share,
   "Save as bookmark ›". That grows the same sheet into step 2, the bookmark form (`BookmarkForm`):
   the link as shared (editable, re-cleaned as you type, "N removed" opens what and why, icon-only
   Copy and Share of the clean link), preview, title, tags, note, Save. Nothing is saved until Save;
   "Saved" shows for a moment, then the sheet closes. Swiping down, the background or × closes it
-  and drops an unsaved bookmark. The Clean tab and a "save" share open on step 2; editing a saved
-  bookmark uses the form with its link read-only.
+  and drops an unsaved bookmark. From the Clean button, step 1 starts with a field to paste or type
+  into, cleaned as you type. A "save" share opens on step 2; editing a saved bookmark uses the form
+  with its link read-only.
 - **BookmarksScreen**: search field, tag filter chips, list (infinite scroll), empty state that
   explains how to save from the share sheet.
 - **BookmarkDetailScreen**: card, open/share/edit/delete, tags, later preview + embed.
