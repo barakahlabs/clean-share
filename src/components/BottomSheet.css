@@ -20,11 +20,35 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 20px 20px var(--sheet-pad-bottom, calc(env(safe-area-inset-bottom) + 20px));
+  padding: 0 20px var(--sheet-pad-bottom, calc(env(safe-area-inset-bottom) + 20px));
+  overflow: hidden;
   border-radius: 16px 16px 0 0;
   background: var(--surface);
   box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.18);
   animation: sheet-up 180ms ease-out;
+}
+
+/* Fills what's visible (the bookmark form). */
+.sheet.tall {
+  height: calc(var(--visible-height, 100vh) - env(safe-area-inset-top) - 24px);
+}
+
+/* The grab handle: the sheet's top padding, and where a swipe down starts. */
+.sheet-grab {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  margin: 0 -20px -2px;
+  padding: 10px 0 8px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.sheet-grab span {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
 }
 
 .sheet-title {
