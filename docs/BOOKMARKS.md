@@ -69,7 +69,7 @@ throw anything away.
 
 1. In Instagram / YouTube / X / a browser: **Share → Save bookmark**.
 2. Clean Share opens the save screen:
-   - cleaned link (removed tracking shown in red, as on the share screen)
+   - cleaned link (removed tracking shown in red, as in the share sheet)
    - title (from the shared text, editable)
    - tag input with suggested tags as chips
    - optional note
@@ -289,8 +289,8 @@ user's database URL and a fresh sign-in token.
 
 ## Share sheet entries
 
-`get_shared` returns `{ text, intent: "share" | "save" }`; `App.tsx` opens the share screen or the
-save screen accordingly.
+`get_shared` returns `{ text, intent: "share" | "save" }`; `App.tsx` opens the share sheet on its
+first step (cleaned text, Copy, Share, "Save as bookmark") or straight on the bookmark form.
 
 | Platform | How "Save bookmark" appears |
 |---|---|
@@ -423,9 +423,16 @@ leaving the screen.
 
 ## UI
 
-- **App shell**: bottom tabs **Bookmarks** and **Settings**; the share screen and save screen open
-  over them when something is shared. (Today `App.tsx` only renders `SharedTextScreen`.)
-- **SaveBookmarkScreen**: cleaned link, title, tag input + chips, note, Save.
+- **App shell**: bottom tabs **Bookmarks**, **Clean** and **Settings**; the share sheet
+  (`ShareSheet`) opens over them when something is shared. Closing a sheet another app opened
+  returns to that app (Android).
+- **ShareSheet**: a bottom sheet. Step 1: the shared text with tracking struck through, Copy, Share,
+  "Save as bookmark ›". That grows the same sheet into step 2, the bookmark form (`BookmarkForm`):
+  the link as shared (editable, re-cleaned as you type, "N removed" opens what and why, icon-only
+  Copy and Share of the clean link), preview, title, tags, note, Save. Nothing is saved until Save;
+  "Saved" shows for a moment, then the sheet closes. Swiping down, the background or × closes it
+  and drops an unsaved bookmark. The Clean tab and a "save" share open on step 2; editing a saved
+  bookmark uses the form with its link read-only.
 - **BookmarksScreen**: search field, tag filter chips, list (infinite scroll), empty state that
   explains how to save from the share sheet.
 - **BookmarkDetailScreen**: card, open/share/edit/delete, tags, later preview + embed.
