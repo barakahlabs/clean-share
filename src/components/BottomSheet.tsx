@@ -29,6 +29,7 @@ type Props = {
 export function BottomSheet({ onClose, labelledBy, role = "dialog", tall = false, children }: Props) {
   const viewport = useVisibleViewport();
   const sheet = useRef<HTMLDivElement>(null);
+  usePageHeldStill();
   const drag = useSwipeDown(sheet, onClose);
 
   // Growing or shrinking (`tall`): animate from the old height to the new one.
@@ -78,6 +79,26 @@ export function BottomSheet({ onClose, labelledBy, role = "dialog", tall = false
       </div>
     </div>
   );
+}
+
+/**
+ * Keeps the page behind the sheet where it is while the sheet is open. Otherwise iOS scrolls it
+ * when a field in the sheet gets focus and the keyboard opens (the bookmark list jumped), and
+ * touches that miss the sheet scroll it. The page is pinned at its scroll position and put back
+ * when the sheet closes; a sheet over a sheet keeps the outer one's position.
+ */
+function usePageHeldStill() {
+  useLayoutEffect(() => {
+    const body = document.body.style;
+    if (body.position === "fixed") return;
+    const y = window.scrollY;
+    const before = { position: body.position, top: body.top, left: body.left, right: body.right };
+    Object.assign(body, { position: "fixed", top: `-${y}px`, left: "0", right: "0" });
+    return () => {
+      Object.assign(body, before);
+      window.scrollTo(0, y);
+    };
+  }, []);
 }
 
 function reducedMotion() {

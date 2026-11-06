@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cleanText, hasTracking, type Analysis } from "../linkCleaner";
 import { shareText } from "../shareTarget";
 import { pasteText } from "../clipboard";
@@ -64,6 +64,12 @@ export function ShareSheet({ text, start, onClose }: Props) {
     };
   }, [source]);
 
+  // Focus the field without scrolling anything into view: the sheet already sits on the keyboard.
+  const field = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (typing) field.current?.focus({ preventScroll: true });
+  }, [typing]);
+
   const paste = () =>
     pasteText().then((pasted) => {
       if (pasted.trim()) setInput(pasted);
@@ -85,10 +91,10 @@ export function ShareSheet({ text, start, onClose }: Props) {
               </h2>
               <div className="clean-input">
                 <textarea
+                  ref={field}
                   className="clean-field"
                   value={input}
                   rows={2}
-                  autoFocus
                   placeholder="Paste or type a link"
                   autoCapitalize="none"
                   autoCorrect="off"
