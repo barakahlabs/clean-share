@@ -1,7 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mode="light">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // The saved light/dark mode, before the first paint (src/theme/appearance.ts
+      // keeps it up to date afterwards).
+      try {
+        var saved = JSON.parse(localStorage.getItem("appearance") || "null") || {};
+        var mode = saved.mode === "light" || saved.mode === "dark" ? saved.mode : null;
+        if (!mode) mode = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.mode = mode;
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Clean Share</title>

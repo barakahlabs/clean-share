@@ -82,7 +82,7 @@
 }
 
 .settings-switch:checked {
-  background: var(--text);
+  background: var(--primary);
 }
 
 .settings-switch:checked::after {
