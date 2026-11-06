@@ -59,23 +59,10 @@
   gap: 6px;
 }
 
+/* .clean-field: the shared text field style (App.css); it doesn't resize by hand. */
 .clean-field {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  font: inherit;
-  color: var(--text);
-  background: var(--background);
   resize: none;
   overflow-wrap: anywhere;
-}
-
-.clean-field:focus {
-  outline: none;
-  border-color: var(--text);
-  background: var(--surface);
 }
 
 .clean-actions {
