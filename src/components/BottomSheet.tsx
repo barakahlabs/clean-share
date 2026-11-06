@@ -2,8 +2,6 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
-  useState,
-  type CSSProperties,
   type PointerEvent,
   type ReactNode,
   type RefObject,
@@ -22,12 +20,11 @@ type Props = {
 };
 
 /**
- * A sheet that slides up from the bottom over a dimmed page. It stays above the on-screen
- * keyboard: Android shrinks the page for the keyboard, but iOS web views don't, so the sheet
- * follows the visible area (`visualViewport`) and is lifted by the keyboard's height.
+ * A sheet that slides up from the bottom over a dimmed page. It sits on the on-screen keyboard
+ * with plain CSS: Android resizes the window for the keyboard, and on iOS the keyboard plugin
+ * (plugins/keyboard) shrinks the web view the same way.
  */
 export function BottomSheet({ onClose, labelledBy, role = "dialog", tall = false, children }: Props) {
-  const viewport = useVisibleViewport();
   const sheet = useRef<HTMLDivElement>(null);
   usePageHeldStill();
   const drag = useSwipeDown(sheet, onClose);
@@ -53,16 +50,8 @@ export function BottomSheet({ onClose, labelledBy, role = "dialog", tall = false
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const style = {
-    "--keyboard-inset": `${viewport.keyboard}px`,
-    "--visible-height": `${viewport.height}px`,
-    // On the screen's bottom edge the sheet clears the home indicator; on the keyboard it only
-    // needs a little room.
-    "--sheet-pad-bottom": viewport.keyboard ? "12px" : "calc(env(safe-area-inset-bottom) + 20px)",
-  } as CSSProperties;
-
   return (
-    <div className="sheet-backdrop" style={style} onClick={onClose}>
+    <div className="sheet-backdrop" onClick={onClose}>
       <div
         ref={sheet}
         className={tall ? "sheet tall" : "sheet"}
@@ -150,31 +139,4 @@ function useSwipeDown(sheet: RefObject<HTMLDivElement | null>, onClose: () => vo
       move(0);
     },
   };
-}
-
-/** Height of the visible area, and how much of the page the keyboard covers (0 when it resizes). */
-function useVisibleViewport() {
-  const read = () => {
-    const vv = window.visualViewport;
-    if (!vv) return { height: window.innerHeight, keyboard: 0 };
-    return {
-      height: vv.height,
-      keyboard: Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)),
-    };
-  };
-  const [viewport, setViewport] = useState(read);
-
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => setViewport(read());
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, []);
-
-  return viewport;
 }
