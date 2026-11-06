@@ -2,16 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { onShared, returnToSource } from "./shareTarget";
 import { TabBar, type Tab } from "./components/TabBar";
 import { BookmarksScreen } from "./screens/BookmarksScreen";
-import { CleanScreen } from "./screens/CleanScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { ShareSheet } from "./screens/ShareSheet";
 import "./App.css";
 
 /**
- * The share sheet: what another app shared (`external`), or the Clean tab's text being saved.
- * `start: "save"` opens on the bookmark form. `id` gives each share a fresh sheet.
+ * The share sheet: what another app shared (`external`), or an empty one from the Clean button
+ * (`start: "input"`). `start: "save"` opens on the bookmark form. `id` gives each a fresh sheet.
  */
-type Overlay = { id: number; text: string; start: "clean" | "save"; external: boolean };
+type Overlay = { id: number; text: string; start: "clean" | "input" | "save"; external: boolean };
 
 /**
  * App shell: bottom tabs, with the share sheet over them when another app shares something. The
@@ -51,23 +50,16 @@ function App() {
     history.back();
   }, []);
 
-  // Saving from the Clean tab: the sheet opens on the form, over the tabs, and closing stays here.
-  const saveFromApp = useCallback((text: string) => open(text, "save", false), [open]);
+  // The Clean button: the sheet with a field to paste or type into, over the current tab.
+  const clean = useCallback(() => open("", "input", false), [open]);
 
-  const screen =
-    tab === "bookmarks" ? (
-      <BookmarksScreen key={saves} />
-    ) : tab === "clean" ? (
-      <CleanScreen onSave={saveFromApp} saves={saves} />
-    ) : (
-      <SettingsScreen />
-    );
+  const screen = tab === "bookmarks" ? <BookmarksScreen key={saves} /> : <SettingsScreen />;
 
   return (
     <>
       <div className="app">
         {screen}
-        <TabBar current={tab} onChange={setTab} />
+        <TabBar current={tab} onChange={setTab} onClean={clean} />
       </div>
       {overlay && <ShareSheet key={overlay.id} text={overlay.text} start={overlay.start} onClose={close} />}
     </>
