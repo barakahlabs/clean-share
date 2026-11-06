@@ -26,42 +26,26 @@
   height: 16px;
 }
 
-/* The link as shared, editable, with what cleaning removes and icon-only Copy and Share. */
+/* The link as shared: a normal field (editable), with icon-only Copy and Share beside it, and what
+   cleaning removes on a line under it. */
 .link-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 4px 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--background);
-}
-
-.link-row:focus-within {
-  border-color: var(--text);
-  background: var(--surface);
+  gap: 8px;
 }
 
 .link-input {
   flex: 1;
   min-width: 0;
-  padding: 8px 0;
-  border: none;
-  outline: none;
-  font: inherit;
-  font-size: 0.9rem;
-  color: var(--text);
-  background: none;
   text-overflow: ellipsis;
 }
 
 .link-removed {
-  flex: none;
-  padding: 4px 2px;
+  align-self: flex-start;
+  padding: 0;
   border: none;
   font: inherit;
-  font-size: 0.75rem;
-  white-space: nowrap;
+  font-size: 0.8rem;
   color: var(--danger);
   background: none;
   cursor: pointer;
@@ -72,8 +56,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -88,8 +72,8 @@
 }
 
 .icon-button svg {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
 }
 
 /* "What's removed and why", under the link: the shared text with its tracking struck through. */
@@ -145,16 +129,7 @@
   color: var(--muted);
 }
 
-.save-input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  font: inherit;
-  color: var(--text);
-  background: var(--background);
-}
+
 
 .save-note {
   resize: vertical;

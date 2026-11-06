@@ -252,7 +252,7 @@ export function BookmarkForm({ text, editableLink = true, onClose, onSaved }: Pr
           <div className="link-row">
             <input
               id="bookmark-link"
-              className="link-input"
+              className="save-input link-input"
               value={linkInput ?? ""}
               readOnly={!editableLink || saved}
               placeholder="Paste or type a link"
@@ -263,16 +263,6 @@ export function BookmarkForm({ text, editableLink = true, onClose, onSaved }: Pr
               enterKeyHint="done"
               onChange={(event) => setLinkInput(event.target.value)}
             />
-            {removed > 0 && (
-              <button
-                type="button"
-                className="link-removed"
-                aria-expanded={showWhy}
-                onClick={() => setShowWhy((open) => !open)}
-              >
-                {removed} removed {showWhy ? "⌃" : "⌄"}
-              </button>
-            )}
             <IconButton label="Copy clean link" confirms disabled={!analysis} onClick={() => analysis && copyText(analysis.cleaned)}>
               <rect x="9" y="9" width="11" height="11" rx="2" />
               <path d="M5 15V5a2 2 0 0 1 2-2h8" />
@@ -282,6 +272,11 @@ export function BookmarkForm({ text, editableLink = true, onClose, onSaved }: Pr
               <path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
             </IconButton>
           </div>
+          {removed > 0 && (
+            <button type="button" className="link-removed" aria-expanded={showWhy} onClick={() => setShowWhy((open) => !open)}>
+              {removed} removed when saved, copied or shared {showWhy ? "⌃" : "⌄"}
+            </button>
+          )}
           {showWhy && analysis && removed > 0 && (
             <CleanedText analysis={analysis} label="As shared" action="when you save, copy or share" />
           )}

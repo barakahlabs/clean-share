@@ -27,6 +27,7 @@ type Props = {
 export function BottomSheet({ onClose, labelledBy, role = "dialog", tall = false, children }: Props) {
   const sheet = useRef<HTMLDivElement>(null);
   usePageHeldStill();
+  useCaretFollowsScroll(sheet);
   const drag = useSwipeDown(sheet, onClose);
 
   // Growing or shrinking (`tall`): animate from the old height to the new one.
@@ -88,6 +89,38 @@ function usePageHeldStill() {
       window.scrollTo(0, y);
     };
   }, []);
+}
+
+/**
+ * iOS draws a focused field's cursor where the field was before its scrolling container moved:
+ * focusing a field scrolls the form a little (to show the field), and the cursor stayed behind,
+ * below the field. Setting the selection again (to what it already is) after a scroll makes WebKit
+ * draw the cursor in the right place. Harmless elsewhere.
+ */
+function useCaretFollowsScroll(sheet: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el) return;
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const field = document.activeElement;
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
+        if (!el.contains(field)) return;
+        const { selectionStart, selectionEnd, selectionDirection } = field;
+        // Not every input type has a selection (it throws on e.g. checkboxes).
+        if (selectionStart === null || selectionEnd === null) return;
+        field.setSelectionRange(selectionStart, selectionEnd, selectionDirection ?? undefined);
+      });
+    };
+    // Scroll events don't bubble: capture them from the form's scrolling area.
+    el.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener("scroll", onScroll, { capture: true });
+    };
+  }, [sheet]);
 }
 
 function reducedMotion() {
