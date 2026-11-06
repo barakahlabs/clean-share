@@ -67,6 +67,6 @@
 
 .tag-filter-chip.on {
   border-color: transparent;
-  color: var(--background);
-  background: var(--text);
+  color: var(--on-primary);
+  background: var(--primary);
 }
