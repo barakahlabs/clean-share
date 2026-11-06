@@ -34,8 +34,10 @@ struct SetMode {
   mode: Mode,
 }
 
+// Async, so it runs off the main thread: the native side switches to the main thread to change the
+// window, and a command waiting on the main thread for that would never finish (iOS kills the app).
 #[tauri::command]
-fn set_mode<R: Runtime>(app: AppHandle<R>, mode: Mode) -> Result<(), String> {
+async fn set_mode<R: Runtime>(app: AppHandle<R>, mode: Mode) -> Result<(), String> {
   #[cfg(mobile)]
   {
     use tauri::Manager;
