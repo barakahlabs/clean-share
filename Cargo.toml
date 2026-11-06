@@ -2,7 +2,7 @@
 # dependencies (Tauri, Turso, reqwest, …) are built once instead of once per crate.
 [workspace]
 resolver = "3"
-members = ["src-tauri", "crates/*", "plugins/share-target"]
+members = ["src-tauri", "crates/*", "plugins/*"]
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

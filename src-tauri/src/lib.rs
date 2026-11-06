@@ -20,6 +20,8 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_share_target::init())
+        // The web view shrinks above the on-screen keyboard (Android and iOS).
+        .plugin(tauri_plugin_keyboard::init())
         // Thumbnails for the WebView: `convertFileSrc("<id>.jpg", "thumb")` in JS.
         .register_asynchronous_uri_scheme_protocol("thumb", |ctx, request, responder| {
             let app = ctx.app_handle().clone();
