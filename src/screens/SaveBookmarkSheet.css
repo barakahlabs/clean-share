@@ -155,6 +155,8 @@
   font-weight: 600;
   color: var(--on-primary);
   background: var(--primary-fill);
+  /* Size the gradient to the outer edge, so it doesn't repeat under a border. */
+  background-origin: border-box;
   cursor: pointer;
 }
 
