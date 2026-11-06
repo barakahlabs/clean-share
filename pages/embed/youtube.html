@@ -1,0 +1,25 @@
+<!doctype html>
+<!--
+  YouTube player for the Clean Share app on iOS: barakahlabs.github.io/clean-share/embed/youtube.html#v=<id>
+
+  The iOS app runs from tauri://localhost, which isn't a website, so YouTube's player embedded
+  straight in the app gets no https referrer and refuses to play (error 153). The app embeds this
+  page instead, and this page embeds YouTube's privacy-enhanced player, so YouTube sees an https
+  site. The video ID comes after #, which browsers don't send: GitHub never sees which video.
+  Published with the rules (.github/workflows/rules.yml).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; frame-src https://www.youtube-nocookie.com"
+    />
+    <title>YouTube player</title>
+    <link rel="stylesheet" href="player.css" />
+    <script src="youtube.js" defer></script>
+  </head>
+  <body></body>
+</html>

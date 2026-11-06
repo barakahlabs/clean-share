@@ -58,9 +58,10 @@ in priority order within each section.
 - [x] The share extensions still open the app on the current iOS version.
 - [ ] Decide whether the extensions should hide themselves from our own share sheet (they appear
       there; iOS doesn't allow excluding them).
-- [ ] YouTube inline on iOS: the embedded player fails there (no `https` referrer from
-      `tauri://localhost`), so it opens the YouTube app. Backlog: a native player sheet
-      ([bookmarks phase 5](BOOKMARKS.md)).
+- [x] YouTube inline on iOS: YouTube's player embedded in the app got no `https` referrer from
+      `tauri://localhost` and refused to play (error 153). The app now embeds a small page on
+      GitHub Pages (`pages/embed/youtube.html`) that embeds the player. Some videos still refuse
+      to play embedded (also in other apps), so "Open in YouTube" stays under the player.
 
 ## 3. Hosted rules (update rules without an app release)
 
