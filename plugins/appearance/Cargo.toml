@@ -1,0 +1,16 @@
+[package]
+name = "tauri-plugin-appearance"
+version = "0.1.0"
+authors = ["Sirajul Muneer"]
+description = "Make the native parts of the app (status bar, keyboard) follow the app's light or dark mode on Android and iOS"
+edition = "2024"
+license = "MIT"
+rust-version = "1.90"
+links = "tauri-plugin-appearance"
+
+[dependencies]
+tauri = { version = "2.12.5" }
+serde = { version = "1.0", features = ["derive"] }
+
+[build-dependencies]
+tauri-plugin = { version = "2.7.2", features = ["build"] }

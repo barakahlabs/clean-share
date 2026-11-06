@@ -46,8 +46,8 @@ jobs:
       # job builds them. Everything else is checked here.
       - name: Clippy and tests
         run: |
-          cargo clippy --workspace --exclude clean-share --exclude tauri-plugin-share-target --exclude tauri-plugin-keyboard --all-targets -- -D warnings
-          cargo test --workspace --exclude clean-share --exclude tauri-plugin-share-target --exclude tauri-plugin-keyboard
+          cargo clippy --workspace --exclude clean-share --exclude tauri-plugin-share-target --exclude tauri-plugin-keyboard --exclude tauri-plugin-appearance --all-targets -- -D warnings
+          cargo test --workspace --exclude clean-share --exclude tauri-plugin-share-target --exclude tauri-plugin-keyboard --exclude tauri-plugin-appearance
 
       - name: Rules are valid, their tests pass, generated files are current
         run: cargo run -p rules-tool -- check

@@ -9,6 +9,7 @@
     "dialog:allow-open",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
-    "share-target:default"
+    "share-target:default",
+    "appearance:default"
   ]
 }
