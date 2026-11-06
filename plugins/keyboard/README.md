@@ -6,7 +6,7 @@ Like Capacitor's "native" keyboard resize.
 
 | Platform | Without it | What the plugin does |
 |---|---|---|
-| iOS | The keyboard (and its ✓ accessory bar) covers the web view; pages measure it with `visualViewport`, which lags behind the animation, and the visible area can be dragged around under it. | `KeyboardPlugin.swift`: on keyboard frame changes, resizes the web view's frame with the keyboard's animation. |
+| iOS | The keyboard (and its ✓ accessory bar) covers the web view; pages measure it with `visualViewport`, which lags behind the animation, and the visible area can be dragged around under it. | `KeyboardPlugin.swift`: on keyboard frame changes, resizes the web view's frame with the keyboard's animation. While the keyboard is up, also keeps WebKit from scrolling the web view past the end of the page to show a focused field: in a fixed layer (a bottom sheet) the field stays put but its cursor moved with that scroll, drawn below the field. |
 | Android | The app is edge-to-edge (required from Android 15), and edge-to-edge windows aren't resized for the keyboard (`adjustResize` does nothing). | `KeyboardPlugin.kt`: pads the activity's content by the keyboard's height (window insets). |
 
 Both are a `KeyboardPlugin` that sets itself up when the web view loads. Nothing to call:
