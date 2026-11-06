@@ -6,21 +6,23 @@
   animation: sheet-fade 150ms ease-out;
 }
 
-/* Sits on the keyboard (iOS) or the screen's bottom edge, and never taller than what's visible. */
+/* Sits on the keyboard or the screen's bottom edge (the page ends at the keyboard on both
+   platforms), and is never taller than the page. */
 .sheet {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: var(--keyboard-inset, 0px);
+  bottom: 0;
   box-sizing: border-box;
   width: 100%;
   max-width: 520px;
-  max-height: calc(var(--visible-height, 100vh) - env(safe-area-inset-top) - 24px);
+  max-height: calc(100% - env(safe-area-inset-top) - 24px);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 0 20px var(--sheet-pad-bottom, calc(env(safe-area-inset-bottom) + 20px));
+  /* Clears the home indicator on the screen's edge; on the keyboard the inset is 0. */
+  padding: 0 20px calc(env(safe-area-inset-bottom) + 16px);
   overflow: hidden;
   border-radius: 16px 16px 0 0;
   background: var(--surface);
@@ -30,7 +32,7 @@
 
 /* Fills what's visible (the bookmark form). */
 .sheet.tall {
-  height: calc(var(--visible-height, 100vh) - env(safe-area-inset-top) - 24px);
+  height: calc(100% - env(safe-area-inset-top) - 24px);
 }
 
 /* The grab handle: the sheet's top padding, and where a swipe down starts. */
