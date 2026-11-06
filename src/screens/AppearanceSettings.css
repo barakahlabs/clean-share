@@ -1,0 +1,95 @@
+.settings-heading {
+  margin: 0 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.appearance {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Light / Dark / System: a segmented control. */
+.mode-switch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--background);
+}
+
+.mode-option {
+  padding: 8px 0;
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  cursor: pointer;
+}
+
+.mode-option.on {
+  color: var(--primary-text);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.palette-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  color: var(--text);
+  background: none;
+  cursor: pointer;
+}
+
+.palette-option.on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* The palette's background, with its main colour and tint as two dots. */
+.palette-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+
+.palette-swatch span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.palette-name {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { listTags, recleanBookmarks, type RecleanReport } from "../bookmarks";
 import { getSettings, setSettings, type Settings } from "../settings";
 import { checkRules, onRulesStatus, rulesStatus, type RulesStatus } from "../rules";
+import { AppearanceSettings } from "./AppearanceSettings";
 import { TagsScreen } from "./TagsScreen";
 import { TransferScreen } from "./TransferScreen";
 import "./Screen.css";
@@ -92,6 +93,7 @@ export function SettingsScreen() {
   return (
     <main className="screen with-tabs">
       <h1>Settings</h1>
+      <AppearanceSettings />
       <section className="settings-section">
         <ul className="settings-list">
           <li>

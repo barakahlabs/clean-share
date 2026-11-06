@@ -59,10 +59,10 @@
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 50%;
-  color: var(--text);
-  background: var(--surface);
+  color: var(--primary-text);
+  background: var(--primary-soft);
   cursor: pointer;
 }
 
@@ -153,8 +153,8 @@
   border-radius: 999px;
   font: inherit;
   font-weight: 600;
-  color: var(--background);
-  background: var(--text);
+  color: var(--on-primary);
+  background: var(--primary-fill);
   cursor: pointer;
 }
 
@@ -169,8 +169,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #fff;
-  background: #1f9d55;
+  color: var(--on-success);
+  background: var(--success);
   opacity: 1;
   animation: saved-pop 260ms ease-out;
 }

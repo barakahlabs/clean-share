@@ -6,7 +6,6 @@ import { BottomSheet } from "../components/BottomSheet";
 import { CleanedText } from "../components/CleanedText";
 import { CopyButton } from "../components/CopyButton";
 import { useSaveState } from "../hooks/useSaveState";
-import shareIcon from "../assets/share.svg";
 import { BookmarkForm } from "./BookmarkForm";
 import "./SharedTextScreen.css";
 import "./ShareSheet.css";
@@ -135,7 +134,10 @@ export function ShareSheet({ text, start, onClose }: Props) {
               disabled={!analysis}
               onClick={() => analysis && shareText(analysis.cleaned).catch(console.error)}
             >
-              <img src={shareIcon} alt="" className="share-icon" />
+              <svg className="share-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M12 3v12M7 8l5-5 5 5" />
+                <path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+              </svg>
               Share
             </button>
             {(save === "ready" || save === "saved") && (
