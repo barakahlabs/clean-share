@@ -5,6 +5,8 @@
 // index.html applies the saved choice before the first paint (the same logic, inline), so the app
 // doesn't flash in the wrong colours on launch.
 
+import { invoke } from "@tauri-apps/api/core";
+
 export type Mode = "system" | "light" | "dark";
 
 const KEY = "appearance";
@@ -30,6 +32,9 @@ export function setMode(mode: Mode) {
 
 function apply(mode: Mode) {
   document.documentElement.dataset.mode = mode === "system" ? (dark.matches ? "dark" : "light") : mode;
+  // The status bar and keyboard follow too (plugins/appearance). Outside the app (a browser) there's
+  // nothing to tell.
+  invoke("plugin:appearance|set_mode", { mode }).catch(() => {});
 }
 
 // Follow the system switching between light and dark while the app is open.

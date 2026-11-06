@@ -22,6 +22,8 @@ pub fn run() {
         .plugin(tauri_plugin_share_target::init())
         // The web view shrinks above the on-screen keyboard (Android and iOS).
         .plugin(tauri_plugin_keyboard::init())
+        // The status bar and keyboard follow the app's light or dark mode (Android and iOS).
+        .plugin(tauri_plugin_appearance::init())
         // Thumbnails for the WebView: `convertFileSrc("<id>.jpg", "thumb")` in JS.
         .register_asynchronous_uri_scheme_protocol("thumb", |ctx, request, responder| {
             let app = ctx.app_handle().clone();

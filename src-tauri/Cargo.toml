@@ -28,6 +28,7 @@ tauri-plugin-fs = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-share-target = { path = "../plugins/share-target" }
 tauri-plugin-keyboard = { path = "../plugins/keyboard" }
+tauri-plugin-appearance = { path = "../plugins/appearance" }
 link-cleaner = { path = "../crates/link-cleaner" }
 bookmarks = { path = "../crates/bookmarks" }
 link-preview = { path = "../crates/link-preview" }
