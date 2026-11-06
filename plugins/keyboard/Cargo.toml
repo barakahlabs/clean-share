@@ -2,7 +2,7 @@
 name = "tauri-plugin-keyboard"
 version = "0.1.0"
 authors = ["Sirajul Muneer"]
-description = "iOS: shrink the web view above the on-screen keyboard, as Android does, instead of letting the keyboard cover the page"
+description = "Shrink the web view above the on-screen keyboard on Android and iOS, instead of letting the keyboard cover the page"
 edition = "2024"
 license = "MIT"
 rust-version = "1.90"

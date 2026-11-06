@@ -3,10 +3,13 @@ import Tauri
 import UIKit
 import WebKit
 
-/// Shrinks the web view to the space above the on-screen keyboard (and its accessory bar), with
-/// the keyboard's own animation, and back when it closes. The page then never sits under the
-/// keyboard: CSS `bottom: 0` is the top of the keyboard, as on Android, and there's nothing for
-/// WebKit to scroll into view or let the user drag around.
+/// Shrinks the web view to the space above the on-screen keyboard, and back when it closes. The
+/// page then never sits under the keyboard: CSS `bottom: 0` is the top of the keyboard, as on
+/// Android (KeyboardPlugin.kt does the same there).
+///
+/// iOS covers the web view with the keyboard (and its accessory bar), so on keyboard frame changes
+/// the web view's frame is resized, with the keyboard's own animation. Nothing is left for WebKit
+/// to scroll into view or for the user to drag around.
 class KeyboardPlugin: Plugin {
   private weak var webview: WKWebView?
   private var observers: [NSObjectProtocol] = []
