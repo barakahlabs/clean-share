@@ -51,3 +51,34 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Opened from the Clean button: a field to paste or type into. */
+.clean-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clean-field {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--background);
+  resize: none;
+  overflow-wrap: anywhere;
+}
+
+.clean-field:focus {
+  outline: none;
+  border-color: var(--text);
+  background: var(--surface);
+}
+
+.clean-actions {
+  display: flex;
+  gap: 16px;
+}

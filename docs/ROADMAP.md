@@ -102,13 +102,13 @@ in priority order within each section.
 
 - [x] Show why each parameter is removed (the rule `reason`) when tapping a red part; redirects
       too.
-- [x] Copy button for the cleaned link (alongside Share), on the share screen and the Clean tab.
+- [x] Copy button for the cleaned link (alongside Share), on the share sheet.
 - [x] Shared links open in a bottom sheet over the app (no Done button), which grows into the
       bookmark form; the form's link can be edited.
 - [ ] Android: a see-through share activity, so the sheet slides up over the app you shared from
       instead of over Clean Share.
-- [x] Paste / type a link inside the app (Clean tab), for links not shared via the share sheet:
-      cleaned as you type, then copy, share or save.
+- [x] Paste / type a link inside the app (the Clean button opens the share sheet with a field),
+      for links not shared via the share sheet: cleaned as you type, then copy, share or save.
 - [ ] Android "Process text" action (`ACTION_PROCESS_TEXT`): select text in any app → Clean Share
       cleans it in place.
 - [ ] Quick mode: clean and immediately re-open the share sheet, skipping the screen (setting).
