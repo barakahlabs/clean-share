@@ -1,0 +1,51 @@
+/*
+ * The app's colours (Aurora): the icon's violet-to-teal gradient on the main buttons, cool greys,
+ * and an ink-violet dark mode so the gradient glows. A light and a dark set, picked by one
+ * attribute on <html>:
+ *   <html data-mode="dark">
+ * Components only use these variables (never raw colours). src/theme/appearance.ts sets the mode
+ * (System, Light or Dark in Settings → Appearance).
+ *
+ * White text is weakest on the gradient's teal end: keep text on --primary-fill short and bold.
+ */
+
+:root {
+  --background: #F5F5FA;
+  --surface: #FFFFFF;
+  --border: #E2E1EC;
+  --text: #15131F;
+  --muted: #6A6880;
+  --primary: #5A2BE2;
+  --primary-fill: linear-gradient(100deg, #4C1FD1 0%, #3570D8 55%, #0E9F96 100%);
+  --primary-soft: #ECE7FC;
+  --primary-text: #4A21C9;
+  --on-primary: #FFFFFF;
+  --ring: rgba(91,165,218,.28);
+  --accent: #62D8CB;
+  --danger: #D92D20;
+  --danger-bg: #FEE4E2;
+  --success: #12A15E;
+  --on-success: #FFFFFF;
+  color-scheme: light;
+}
+
+:root[data-mode="dark"] {
+  --background: #0A0914;
+  --surface: #15132A;
+  --border: #2A2645;
+  --text: #F2F0FF;
+  --muted: #A09CC0;
+  --primary: #8F72FF;
+  --primary-fill: linear-gradient(100deg, #6A42F0 0%, #3D7EE0 55%, #13A89E 100%);
+  --primary-soft: #262050;
+  --primary-text: #D2C7FF;
+  --on-primary: #FFFFFF;
+  --ring: rgba(98,216,203,.3);
+  --accent: #62D8CB;
+  --danger: #FF7A70;
+  --danger-bg: #3A1820;
+  --success: #3DDC97;
+  --on-success: #05210F;
+  color-scheme: dark;
+}
+

@@ -1,15 +1,14 @@
 <!doctype html>
-<html lang="en" data-palette="violet" data-mode="light">
+<html lang="en" data-mode="light">
   <head>
     <meta charset="UTF-8" />
     <script>
-      // The saved palette and light/dark mode, before the first paint (src/theme/appearance.ts
-      // keeps them up to date afterwards).
+      // The saved light/dark mode, before the first paint (src/theme/appearance.ts
+      // keeps it up to date afterwards).
       try {
         var saved = JSON.parse(localStorage.getItem("appearance") || "null") || {};
         var mode = saved.mode === "light" || saved.mode === "dark" ? saved.mode : null;
         if (!mode) mode = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        if (saved.palette) document.documentElement.dataset.palette = saved.palette;
         document.documentElement.dataset.mode = mode;
       } catch (e) {}
     </script>

@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./theme/palettes.css";
+import "./theme/colors.css";
 import "./theme/appearance";
 import App from "./App";
 

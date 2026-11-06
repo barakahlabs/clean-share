@@ -17,7 +17,7 @@
   gap: 10px;
 }
 
-/* Secondary actions: tinted with the palette, so they stand out from the sheet. */
+/* Secondary actions: tinted with the primary colour, so they stand out from the sheet. */
 .share-sheet-actions .share-button {
   min-width: 0;
   padding: 12px 16px;
