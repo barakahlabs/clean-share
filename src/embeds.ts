@@ -13,17 +13,22 @@ export type Player = {
   /** Width / height for video; `null` for a fixed `height` (audio, posts). */
   ratio: number | null;
   height: number;
-  /** Play by opening the link in the site's app (or browser) instead of inline. */
-  external?: boolean;
+  /**
+   * Also offer "Open in YouTube" under the player: some videos refuse to play embedded, and the
+   * player can't tell the app when they do.
+   */
+  openInApp?: boolean;
 };
 
 /**
- * iOS serves the app from `tauri://localhost`, so an embedded YouTube player gets no `https`
- * referrer and refuses to play (error 153). There, YouTube opens in its app instead. Backlog: a
- * native player sheet (WKWebView with an https base URL) to play it inline (docs/BOOKMARKS.md).
+ * iOS serves the app from `tauri://localhost`, so YouTube's player embedded in the app gets no
+ * `https` referrer and refuses to play (error 153). There the app embeds a small page on the
+ * project's GitHub Pages site (pages/embed/youtube.html), which embeds YouTube's player: YouTube
+ * then sees an https site. The video ID goes after #, so GitHub doesn't see it.
  * Decided at build time: the Tauri CLI sets TAURI_ENV_PLATFORM for the iOS build.
  */
 const IOS = import.meta.env.TAURI_ENV_PLATFORM === "ios";
+const YOUTUBE_PAGE = "https://barakahlabs.github.io/clean-share/embed/youtube.html";
 
 const VIDEO = 16 / 9;
 
@@ -46,11 +51,13 @@ export function playerFor(bookmark: Bookmark): Player | null {
     const shorts = path[0] === "shorts";
     // youtube-nocookie: YouTube's privacy-enhanced player (no cookies until the video plays).
     return {
-      src: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`,
+      src: IOS
+        ? `${YOUTUBE_PAGE}#v=${id}`
+        : `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`,
       site: "YouTube",
       ratio: shorts ? 9 / 16 : VIDEO,
       height: 0,
-      external: IOS,
+      openInApp: true,
     };
   }
   if (host === "vimeo.com" && /^\d+$/.test(path[0] ?? "")) {

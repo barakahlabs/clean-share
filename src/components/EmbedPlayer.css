@@ -65,3 +65,17 @@
   height: 100%;
   border: 0;
 }
+
+/* "Not playing? Open in YouTube ›" under a player that can refuse a video. */
+.embed-open {
+  display: block;
+  margin: 0 0 8px;
+  padding: 4px 0;
+  border: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary-text);
+  background: none;
+  cursor: pointer;
+}

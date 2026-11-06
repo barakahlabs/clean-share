@@ -1,9 +1,12 @@
 name: Rules
 
-# Publishes the tracking rules for apps to download (crates/rules-update): on every change to the
-# rules (or the code that reads them) on main, or by hand. One file per schema version, overwritten
-# each time: rules/v1/rules.json and its ed25519 signature rules/v1/rules.json.sig, on GitHub
-# Pages (https://barakahlabs.github.io/clean-share/rules/v1/rules.json).
+# Publishes the GitHub Pages site (https://barakahlabs.github.io/clean-share/), on every change on
+# main to what's in it, or by hand. Each deploy replaces the whole site, so everything is published
+# here:
+# - The tracking rules for apps to download (crates/rules-update). One file per schema version,
+#   overwritten each time: rules/v1/rules.json and its ed25519 signature rules/v1/rules.json.sig.
+# - The static pages in pages/ as they are, e.g. the YouTube player the iOS app embeds
+#   (embed/youtube.html).
 on:
   push:
     branches: [main]
@@ -13,6 +16,7 @@ on:
       - "crates/link-cleaner/**"
       - "crates/rules-tool/**"
       - "crates/rules-update/**"
+      - "pages/**"
       - ".github/workflows/rules.yml"
   workflow_dispatch:
 
@@ -47,6 +51,9 @@ jobs:
 
       - name: Rules are valid and their tests pass
         run: cargo run -p rules-tool -- check
+
+      - name: Static pages
+        run: mkdir -p site && cp -R pages/. site/
 
       - name: Bundle
         run: |
