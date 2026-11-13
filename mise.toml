@@ -4,7 +4,7 @@ node = "26"
 pnpm = "12"
 # Major version only: mise installs the newest Corretto 21, and Renovate offers only new majors
 # (corretto-25), in the same form. A full version gets Renovate updates mise can't install.
-java = "corretto-21"
+java = "corretto-25"
 # Android command-line tools only; SDK packages come from `mise run android:sdk`.
 android-sdk = "23.0"
 
