@@ -30,7 +30,7 @@
   "packageRules": [
     {
       "groupName": "npm/pnpm non-major",
-      "matchManagers": ["npm", "pnpm"],
+      "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true,
       "addLabels": ["automerge", "javascript"]
