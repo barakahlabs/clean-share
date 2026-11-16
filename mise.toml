@@ -5,6 +5,10 @@ pnpm = "12"
 # Major version only: mise installs the newest Corretto 21, and Renovate offers only new majors
 # (corretto-25), in the same form. A full version gets Renovate updates mise can't install.
 java = "corretto-21"
+# A full version, so a new Rust release can't break CI before we choose to update (1.100.0 can't
+# build turso_core 0.8.3: tursodatabase/turso#9463). mise installs it through rustup. The targets
+# are the ones the Android (ci.yml) and iOS simulator (ios.yml) builds compile for.
+rust = { version = "1.99.1", components = "clippy", targets = "aarch64-linux-android,aarch64-apple-ios-sim" }
 # Android command-line tools only; SDK packages come from `mise run android:sdk`.
 android-sdk = "23.0"
 
