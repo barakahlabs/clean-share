@@ -55,15 +55,10 @@ jobs:
           name: frontend-dist
           path: dist
 
-      # Node and pnpm only: the Tauri CLI is an npm package and drives Xcode's Rust build step.
+      # Node, pnpm and Rust: the Tauri CLI is an npm package and drives Xcode's Rust build step.
       - uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
         with:
-          install_args: node pnpm
-
-      - name: Install Rust
-        run: |
-          rustup toolchain install stable --profile minimal --target aarch64-apple-ios-sim
-          rustup default stable
+          install_args: node pnpm rust
 
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
